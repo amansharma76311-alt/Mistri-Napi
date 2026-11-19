@@ -1,0 +1,2392 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#173e35" />
+  <title>मिस्त्री नापी | Mistri Napi</title>
+
+  <!-- Google Fonts: Inter + Noto Sans Devanagari for crisp Hindi & English rendering -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#173e35',
+              dark: '#0f2b24',
+              light: '#245c4f',
+              tint: '#e5f0ec'
+            },
+            cream: {
+              DEFAULT: '#f6f2e9',
+              soft: '#faf8f2',
+              border: '#e5dec9'
+            },
+            gold: {
+              DEFAULT: '#c6922e',
+              tint: '#fef6e4',
+              border: '#f0d599'
+            }
+          },
+          fontFamily: {
+            sans: ['"Noto Sans Devanagari"', 'Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- html2canvas & jsPDF for crisp Devanagari Hindi PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    /* Base typography & smooth scrolling */
+    html, body {
+      font-family: "Noto Sans Devanagari", "Inter", system-ui, -apple-system, sans-serif;
+      background-color: #f6f2e9;
+      color: #1a2421;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: none;
+    }
+
+    /* Hide number input spinners for cleaner mobile entry */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+
+    /* Subtle fade-in animation for tabs and modals */
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-up {
+      animation: fadeSlideUp 0.2s ease-out forwards;
+    }
+
+    /* Off-screen staging area used solely for PDF rendering */
+    #pdf-render-stage {
+      position: fixed;
+      left: -10000px;
+      top: 0;
+      width: 794px;
+      background: #ffffff;
+      color: #1a2421;
+      z-index: -1;
+      font-family: "Noto Sans Devanagari", "Inter", sans-serif;
+    }
+
+    /* Print sheet visibility rules */
+    #print-sheet {
+      display: none;
+    }
+
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 10mm;
+      }
+      body {
+        background: #ffffff !important;
+        color: #111827 !important;
+      }
+      #app-shell,
+      #toast-container,
+      .modal-backdrop,
+      #pdf-render-stage {
+        display: none !important;
+      }
+      #print-sheet {
+        display: block !important;
+        width: 100% !important;
+      }
+      table {
+        page-break-inside: auto;
+        border-collapse: collapse;
+        width: 100%;
+      }
+      tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+      }
+      thead {
+        display: table-header-group;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#f6f2e9] text-[#1a2421] antialiased selection:bg-[#173e35] selection:text-white">
+
+  <!-- ==================== MAIN APP SHELL ==================== -->
+  <div id="app-shell" class="mx-auto min-h-screen max-w-lg bg-[#f6f2e9] pb-10 sm:my-4 sm:min-h-[calc(100vh-2rem)] sm:rounded-[28px] sm:border sm:border-[#e5dec9] sm:shadow-xl overflow-x-hidden">
+
+    <!-- ==================== DARK GREEN CURVED HEADER ==================== -->
+    <header class="relative bg-[#173e35] px-4 pt-5 pb-12 text-white rounded-b-[28px] shadow-md">
+      <!-- Top Row: Brand Title + Language Toggle -->
+      <div class="flex items-start justify-between gap-2">
+        <div class="flex items-center gap-3 min-w-0">
+          <!-- Custom Inline SVG Ruler Emblem -->
+          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#245c4f] border border-[#3d7a6c] shadow-inner">
+            <svg class="h-6 w-6 text-[#f6f2e9]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 10H3V8h2v4h2V8h2v4h2V8h2v4h2V8h2v4h2V8h2v8z"/>
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <h1 id="hdr-title" class="truncate text-xl font-extrabold tracking-tight leading-tight">मिस्त्री नापी</h1>
+            <p id="hdr-subtitle" class="truncate text-xs text-[#cbe0d9] font-medium mt-0.5">कारपेंटर एवं एल्युमिनियम माप बुक</p>
+          </div>
+        </div>
+
+        <!-- Instant Hindi / English Language Toggle -->
+        <button id="btn-lang-toggle" type="button"
+          class="shrink-0 flex items-center gap-1.5 rounded-full bg-[#245c4f] border border-[#4a8577] px-3 py-2 text-xs font-bold text-white shadow-sm active:scale-95 transition hover:bg-[#2c6d5e]"
+          aria-label="Toggle Language">
+          <svg class="h-3.5 w-3.5 text-[#f0d599]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+          <span id="lbl-lang-btn">English</span>
+        </button>
+      </div>
+
+      <!-- Second Row: Quick Backup / Restore + Storage Sync Pill -->
+      <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <!-- Backup JSON Button -->
+          <button id="btn-backup" type="button"
+            class="flex items-center gap-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 px-3 py-1.5 text-xs font-semibold text-white active:scale-95 transition">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            </svg>
+            <span id="lbl-backup">बैकअप</span>
+          </button>
+
+          <!-- Restore JSON Button -->
+          <button id="btn-restore" type="button"
+            class="flex items-center gap-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 px-3 py-1.5 text-xs font-semibold text-white active:scale-95 transition">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/>
+            </svg>
+            <span id="lbl-restore">रीस्टोर</span>
+          </button>
+          <input id="input-restore-file" type="file" accept=".json,application/json" class="hidden" />
+        </div>
+
+        <!-- Live Storage Status Badge -->
+        <div id="sync-badge" class="flex items-center gap-1.5 rounded-full bg-[#0f2b24]/70 border border-white/10 px-2.5 py-1 text-[11px] font-medium text-[#cbe0d9]">
+          <span id="sync-dot" class="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="lbl-sync-status">कनेक्ट हो रहा है...</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ==================== OVERLAPPING LIVE SUMMARY STATS BAR ==================== -->
+    <section class="relative z-10 -mt-8 px-4" aria-label="Summary Statistics">
+      <div class="grid grid-cols-3 gap-2.5">
+        <!-- Total Measurements -->
+        <div class="rounded-2xl bg-white border border-[#e5dec9] p-3 text-center shadow-sm">
+          <div id="stat-total-measurements" class="text-xl font-extrabold text-[#173e35] leading-tight">0</div>
+          <div id="lbl-stat-measurements" class="mt-0.5 text-[11px] font-semibold text-[#5a6863] truncate">कुल नाप</div>
+        </div>
+        <!-- Total Pieces -->
+        <div class="rounded-2xl bg-white border border-[#e5dec9] p-3 text-center shadow-sm">
+          <div id="stat-total-pieces" class="text-xl font-extrabold text-[#173e35] leading-tight">0</div>
+          <div id="lbl-stat-pieces" class="mt-0.5 text-[11px] font-semibold text-[#5a6863] truncate">कुल पीस</div>
+        </div>
+        <!-- Total Customers -->
+        <div class="rounded-2xl bg-white border border-[#e5dec9] p-3 text-center shadow-sm">
+          <div id="stat-total-customers" class="text-xl font-extrabold text-[#173e35] leading-tight">0</div>
+          <div id="lbl-stat-customers" class="mt-0.5 text-[11px] font-semibold text-[#5a6863] truncate">कुल ग्राहक</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3-TAB NAVIGATION BAR ==================== -->
+    <nav class="sticky top-0 z-20 bg-[#f6f2e9]/95 backdrop-blur-sm px-4 pt-3.5 pb-2.5">
+      <div class="grid grid-cols-3 gap-1.5 rounded-2xl bg-white border border-[#e5dec9] p-1.5 shadow-sm">
+        <button id="tab-btn-form" type="button" data-tab="form"
+          class="tab-btn flex items-center justify-center gap-1 rounded-xl py-2.5 px-2 text-xs font-bold transition-all bg-[#173e35] text-white shadow-sm">
+          <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          <span id="lbl-tab-form" class="truncate">नया नाप</span>
+        </button>
+
+        <button id="tab-btn-list" type="button" data-tab="list"
+          class="tab-btn flex items-center justify-center gap-1 rounded-xl py-2.5 px-2 text-xs font-bold transition-all text-[#5a6863] hover:bg-[#faf8f2]">
+          <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+          </svg>
+          <span id="lbl-tab-list" class="truncate">नाप सूची</span>
+        </button>
+
+        <button id="tab-btn-history" type="button" data-tab="history"
+          class="tab-btn flex items-center justify-center gap-1 rounded-xl py-2.5 px-2 text-xs font-bold transition-all text-[#5a6863] hover:bg-[#faf8f2]">
+          <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span id="lbl-tab-history" class="truncate">ग्राहक हिस्ट्री</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ==================== MAIN CONTENT AREA ==================== -->
+    <main class="px-4 pt-1">
+
+      <!-- ==================== TAB 1: MEASUREMENT FORM ==================== -->
+      <section id="tab-panel-form" class="animate-fade-up">
+        <!-- Edit Mode Active Banner -->
+        <div id="edit-mode-banner" class="hidden mb-3 flex items-center justify-between rounded-2xl bg-[#e8f2f8] border border-[#b5d6eb] px-3.5 py-2.5 text-xs font-bold text-[#1d5f8a]">
+          <div class="flex items-center gap-2">
+            <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+            </svg>
+            <span id="lbl-edit-banner">नाप संपादित कर रहे हैं</span>
+          </div>
+          <button id="btn-banner-cancel-edit" type="button" class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-bold text-[#1d5f8a] border border-[#b5d6eb] active:scale-95">
+            रद्द करें
+          </button>
+        </div>
+
+        <form id="measurement-form" class="rounded-3xl bg-white border border-[#e5dec9] p-4 sm:p-5 shadow-sm space-y-4" novalidate>
+          <!-- Form Card Header -->
+          <div class="flex items-center justify-between border-b border-[#f0ead8] pb-3">
+            <h2 id="lbl-form-heading" class="text-base font-extrabold text-[#173e35]">नया नाप दर्ज करें</h2>
+            <span id="lbl-required-note" class="text-[11px] font-medium text-[#5a6863]">* आवश्यक फ़ील्ड</span>
+          </div>
+
+          <!-- Work Type Dropdown (Exact 13 Options) -->
+          <div>
+            <label for="field-work-type" id="lbl-work-type" class="block text-xs font-bold text-[#1a2421] mb-1.5">काम का प्रकार *</label>
+            <select id="field-work-type"
+              class="w-full min-h-[46px] rounded-xl border border-[#d8cfb7] bg-[#faf8f2] px-3.5 py-2.5 text-sm font-semibold text-[#1a2421] focus:border-[#173e35] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#173e35]/20 transition">
+              <!-- Populated dynamically in active language -->
+            </select>
+          </div>
+
+          <!-- Highlighted Depth Required Notice (Kitchen Cabinet & Ply Wardrobe) -->
+          <div id="depth-required-notice" class="hidden rounded-2xl bg-[#fef6e4] border border-[#f0d599] px-3.5 py-2.5 flex items-start gap-2.5">
+            <svg class="h-4 w-4 shrink-0 text-[#b47b16] mt-0.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+            </svg>
+            <p id="lbl-depth-notice" class="text-xs font-semibold text-[#85580a] leading-snug">
+              किचन कैबिनेट और प्लाई वार्डरोब के लिए गहराई (Depth) भरना अनिवार्य है।
+            </p>
+          </div>
+
+          <!-- Customer/Site Name & Room/Location Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label for="field-customer" id="lbl-customer" class="block text-xs font-bold text-[#1a2421] mb-1.5">ग्राहक / साइट का नाम *</label>
+              <input id="field-customer" type="text" list="customer-datalist" autocomplete="off"
+                placeholder="जैसे: राजेश शर्मा साइट"
+                class="w-full min-h-[46px] rounded-xl border border-[#d8cfb7] bg-[#faf8f2] px-3.5 py-2.5 text-sm font-medium text-[#1a2421] placeholder:text-[#8b9691] focus:border-[#173e35] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#173e35]/20 transition" />
+              <datalist id="customer-datalist"></datalist>
+            </div>
+
+            <div>
+              <label for="field-room" id="lbl-room" class="block text-xs font-bold text-[#1a2421] mb-1.5">कमरा / स्थान *</label>
+              <input id="field-room" type="text"
+                placeholder="जैसे: मास्टर बेडरूम, हॉल"
+                class="w-full min-h-[46px] rounded-xl border border-[#d8cfb7] bg-[#faf8f2] px-3.5 py-2.5 text-sm font-medium text-[#1a2421] placeholder:text-[#8b9691] focus:border-[#173e35] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#173e35]/20 transition" />
+            </div>
+          </div>
+
+          <!-- Unit Selector & Quantity -->
+          <div class="grid grid-cols-3 gap-3">
+            <div class="col-span-2">
+              <label for="field-unit" id="lbl-unit" class="block text-xs font-bold text-[#1a2421] mb-1.5">माप की इकाई (Unit) *</label>
+              <select id="field-unit"
+                class="w-full min-h-[46px] rounded-xl border border-[#d8cfb7] bg-[#faf8f2] px-3.5 py-2.5 text-sm font-semibold text-[#1a2421] focus:border-[#173e35] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#173e35]/20 transition">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div>
+              <label for="field-qty" id="lbl-qty" class="block text-xs font-bold text-[#1a2421] mb-1.5">मात्रा (पीस)</label>
+              <input id="field-qty" type="number" min="1" step="1" value="1" inputmode="numeric"
+                class="w-full min-h-[46px] rounded-xl border border-[#d8cfb7] bg-[#faf8f2] px-3 py-2.5 text-center text-sm font-bold text-[#173e35] focus:border-[#173e35] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#173e35]/20 transition" />
+            </div>
+          </div>
+
+          <!-- Dimensions Box (Width, Height, Depth + Dynamic Suta 0-7 Inputs) -->
+          <div class="rounded-2xl bg-[#faf8f2] border border-[#e5dec9] p-3.5 space-y-3">
+            <div class="flex items-center justify-between">
+              <span id="lbl-dimensions-title" class="text-xs font-extrabold uppercase tracking-wide text-[#173e35]">माप विवरण (Dimensions)</span>
+              <span id="suta-hint-pill" class="hidden rounded-full bg-[#e5f0ec] px-2.5 py-0.5 text-[10px] font-bold text-[#173e35]">1 इंच = 8 सूत (0–7)</span>
+            </div>
+
+            <!-- WIDTH ROW -->
+            <div>
+              <label for="field-width" id="lbl-width" class="block text-xs font-bold text-[#1a2421] mb-1">चौड़ाई (Width) *</label>
+              <div class="flex items-center gap-2">
+                <div class="relative flex-1">
+                  <input id="field-width" type="number" min="0" step="any" inputmode="decimal" placeholder="0"
+                    class="w-full min-h-[44px] rounded-xl border border-[#d8cfb7] bg-white px-3.5 py-2 pr-12 text-sm font-bold text-[#1a2421] focus:border-[#173e35] focus:outline-none focus:ring-2 focus:ring-[#173e35]/20" />
+                  <span class="unit-inline-tag pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-[#5a6863]">ft</span>
+                </div>
+                <div class="suta-group hidden w-28 shrink-0">
+                  <div class="relative">
+                    <input id="field-width-suta" type="number" min="0" max="7" step="1" inputmode="numeric" placeholder="0"
+                      class="w-full min-h-[44px] rounded-xl border border-[#b9d3ca] bg-[#e5f0ec]/50 px-3 py-2 pr-10 text-sm font-bold text-[#173e35] focus:border-[#173e35] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#173e35]/20" />
+                    <span class="suta-inline-tag pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#173e35]">सूत</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- HEIGHT ROW -->
+            <div>
+              <label for="field-height" id="lbl-height" class="block text-xs font-bold text-[#1a2421] mb-1">ऊँचाई (Height) *</label>
+              <div class="flex items-center gap-2">
+                <div class="relative flex-1">
+                  <input id="field-height" type="number" min="0" step="any" inputmode="decimal" placeholder="0"
+                    class="w-full min-h-[44px] rounded-xl border border-[#d8cfb7] bg-white px-3.5 py-2 pr-12 text-sm font-bold text-[#1a2421] focus:border-[#173e35] focus:outline-none focus:ring-2 focus:ring-[#173e35]/20" />
+                  <span class="unit-inline-tag pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-[#5a6863]">ft</span>
+                </div>
+                <div class="suta-group hidden w-28 shrink-0">
+                  <div class="relative">
+                    <input id="field-height-suta" type="number" min="0" max="7" step="1" inputmode="numeric" placeholder="0"
+                      class="w-full min-h-[44px] rounded-xl border border-[#b9d3ca] bg-[#e5f0ec]/50 px-3 py-2 pr-10 text-sm font-bold text-[#173e35] focus:border-[#173e35] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#173e35]/20" />
+                    <span class="suta-inline-tag pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#173e35]">सूत</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- DEPTH ROW -->
+            <div>
+              <label for="field-depth" id="lbl-depth" class="block text-xs font-bold text-[#1a2421] mb-1">गहराई (Depth) <span id="lbl-depth-opt" class="font-normal text-[#5a6863]">(वैकल्पिक)</span></label>
+              <div class="flex items-center gap-2">
+                <div class="relative flex-1">
+                  <input id="field-depth" type="number" min="0" step="any" inputmode="decimal" placeholder="0"
+                    class="w-full min-h-[44px] rounded-xl border border-[#d8cfb7] bg-white px-3.5 py-2 pr-12 text-sm font-bold text-[#1a2421] focus:border-[#173e35] focus:outline-none focus:ring-2 focus:ring-[#173e35]/20" />
+                  <span class="unit-inline-tag pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-[#5a6863]">ft</span>
+                </div>
+                <div class="suta-group hidden w-28 shrink-0">
+                  <div class="relative">
+                    <input id="field-depth-suta" type="number" min="0" max="7" step="1" inputmode="numeric" placeholder="0"
+                      class="w-full min-h-[44px] rounded-xl border border-[#b9d3ca] bg-[#e5f0ec]/50 px-3 py-2 pr-10 text-sm font-bold text-[#173e35] focus:border-[#173e35] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#173e35]/20" />
+                    <span class="suta-inline-tag pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#173e35]">सूत</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Sq.Ft. Calculation Strip -->
+            <div class="rounded-xl bg-[#e5f0ec] border border-[#c3dcd3] px-3.5 py-2.5 flex items-center justify-between gap-2">
+              <div>
+                <div id="lbl-live-area" class="text-[11px] font-bold text-[#173e35]">अनुमानित क्षेत्रफल (Sq.Ft.)</div>
+                <div id="live-area-sub" class="text-[11px] text-[#356357] font-medium">1 पीस के लिए</div>
+              </div>
+              <div class="text-right">
+                <span id="live-sqft-value" class="text-lg font-extrabold text-[#173e35]">0.00</span>
+                <span class="text-xs font-bold text-[#173e35] ml-0.5">Sq.Ft.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes Textarea -->
+          <div>
+            <label for="field-notes" id="lbl-notes" class="block text-xs font-bold text-[#1a2421] mb-1.5">नोट्स / विशेष विवरण</label>
+            <textarea id="field-notes" rows="2" placeholder="जैसे: 5mm टफन ग्लास, ब्लैक पाउडर कोटिंग, सॉफ्ट क्लोज़ कब्ज़ा..."
+              class="w-full rounded-xl border border-[#d8cfb7] bg-[#faf8f2] px-3.5 py-2.5 text-sm font-medium text-[#1a2421] placeholder:text-[#8b9691] focus:border-[#173e35] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#173e35]/20 transition resize-none"></textarea>
+          </div>
+
+          <!-- Inline Validation Error Box -->
+          <div id="form-error-box" class="hidden rounded-xl bg-[#fdecec] border border-[#f5c2c0] px-3.5 py-2.5 text-xs font-bold text-[#c6362f]"></div>
+
+          <!-- Form Submit & Clear Buttons -->
+          <div class="grid grid-cols-3 gap-2.5 pt-1">
+            <button id="btn-clear-form" type="button"
+              class="col-span-1 min-h-[48px] rounded-xl border border-[#d8cfb7] bg-[#faf8f2] px-3 py-2.5 text-xs font-bold text-[#5a6863] hover:bg-[#efeadd] active:scale-[0.98] transition">
+              साफ़ करें
+            </button>
+            <button id="btn-save-measurement" type="submit"
+              class="col-span-2 min-h-[48px] flex items-center justify-center gap-2 rounded-xl bg-[#173e35] px-4 py-2.5 text-sm font-extrabold text-white shadow-md shadow-[#173e35]/20 hover:bg-[#1f5246] active:scale-[0.98] transition">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
+              </svg>
+              <span id="lbl-save-btn">नाप सेव करें</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ==================== TAB 2: SAVED MEASUREMENTS LIST ==================== -->
+      <section id="tab-panel-list" class="hidden animate-fade-up space-y-3">
+        <!-- Search & Bulk Action Card -->
+        <div class="rounded-3xl bg-white border border-[#e5dec9] p-3.5 shadow-sm space-y-3">
+          <!-- Real-Time Search Input -->
+          <div class="relative">
+            <svg class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5a6863]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+            <input id="field-search" type="text" placeholder="ग्राहक, कमरा, काम या नोट्स खोजें..."
+              class="w-full min-h-[44px] rounded-xl border border-[#d8cfb7] bg-[#faf8f2] pl-10 pr-9 py-2 text-sm font-medium text-[#1a2421] placeholder:text-[#8b9691] focus:border-[#173e35] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#173e35]/20 transition" />
+            <button id="btn-clear-search" type="button" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-[#5a6863] hover:bg-[#e5dec9]/60" aria-label="Clear search">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+                <path d="M18 6 6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Active Customer Filter Chip (Shown when navigating from Customer History) -->
+          <div id="active-customer-filter-bar" class="hidden flex items-center justify-between rounded-xl bg-[#e5f0ec] border border-[#b9d3ca] px-3 py-2 text-xs font-bold text-[#173e35]">
+            <span id="lbl-active-filter-text" class="truncate"></span>
+            <button id="btn-clear-customer-filter" type="button" class="ml-2 shrink-0 rounded-lg bg-white px-2.5 py-1 text-[11px] font-bold text-[#173e35] border border-[#b9d3ca] active:scale-95">
+              सभी देखें
+            </button>
+          </div>
+
+          <!-- Bulk Actions Row: WhatsApp All, PDF Export, Print -->
+          <div class="grid grid-cols-3 gap-2">
+            <button id="btn-share-all-wa" type="button"
+              class="flex items-center justify-center gap-1.5 min-h-[42px] rounded-xl bg-[#e6f5ec] border border-[#bde3cc] px-2 py-2 text-xs font-bold text-[#1e8e4e] hover:bg-[#d6efdf] active:scale-95 transition">
+              <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12.03 2C6.5 2 2 6.48 2 12c0 1.97.57 3.81 1.56 5.36L2 22l4.8-1.52A9.96 9.96 0 0 0 12.03 22C17.55 22 22 17.52 22 12S17.55 2 12.03 2zm5.77 14.17c-.24.68-1.41 1.3-1.95 1.38-.5.07-1.15.1-1.85-.12-.43-.14-.98-.32-1.69-.63-2.97-1.28-4.91-4.3-5.06-4.5-.15-.2-1.21-1.61-1.21-3.07 0-1.46.76-2.18 1.03-2.48.27-.3.59-.37.79-.37h.57c.18 0 .43-.07.67.51.24.59.84 2.04.91 2.19.07.15.12.32.02.52-.1.2-.15.32-.3.5-.15.17-.31.39-.44.52-.15.15-.3.31-.13.61.17.3.77 1.27 1.65 2.05 1.14 1.01 2.09 1.33 2.39 1.48.3.15.47.12.64-.07.17-.2.74-.86.94-1.16.2-.3.39-.25.67-.15.27.1 1.73.81 2.03.96.3.15.49.22.57.35.07.12.07.72-.17 1.4z"/>
+              </svg>
+              <span id="lbl-btn-share-all" class="truncate">WhatsApp</span>
+            </button>
+
+            <button id="btn-export-pdf" type="button"
+              class="flex items-center justify-center gap-1.5 min-h-[42px] rounded-xl bg-[#e5f0ec] border border-[#c3dcd3] px-2 py-2 text-xs font-bold text-[#173e35] hover:bg-[#d5e7e0] active:scale-95 transition">
+              <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+              </svg>
+              <span id="lbl-btn-pdf" class="truncate">PDF</span>
+            </button>
+
+            <button id="btn-print-list" type="button"
+              class="flex items-center justify-center gap-1.5 min-h-[42px] rounded-xl bg-[#faf8f2] border border-[#d8cfb7] px-2 py-2 text-xs font-bold text-[#173e35] hover:bg-[#efeadd] active:scale-95 transition">
+              <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
+              </svg>
+              <span id="lbl-btn-print" class="truncate">प्रिंट</span>
+            </button>
+          </div>
+
+          <!-- Filtered Count Summary Strip -->
+          <div class="flex items-center justify-between text-[11px] font-semibold text-[#5a6863] px-0.5 pt-0.5 border-t border-[#f0ead8]">
+            <span id="lbl-list-showing">दिख रहे हैं: 0 नाप</span>
+            <span id="lbl-list-sqft" class="font-bold text-[#173e35]">कुल: 0.00 Sq.Ft.</span>
+          </div>
+        </div>
+
+        <!-- Measurements Cards Container -->
+        <div id="measurements-list-container" class="space-y-3"></div>
+      </section>
+
+      <!-- ==================== TAB 3: CUSTOMER-WISE HISTORY ==================== -->
+      <section id="tab-panel-history" class="hidden animate-fade-up space-y-3">
+        <!-- Customer History Header Strip -->
+        <div class="rounded-2xl bg-white border border-[#e5dec9] px-4 py-3 shadow-sm flex items-center justify-between">
+          <div>
+            <h2 id="lbl-history-heading" class="text-sm font-extrabold text-[#173e35]">ग्राहक अनुसार हिस्ट्री</h2>
+            <p id="lbl-history-sub" class="text-[11px] font-medium text-[#5a6863]">साइट के हिसाब से सभी नाप, पीस और Sq.Ft.</p>
+          </div>
+          <span id="history-customer-count-pill" class="rounded-full bg-[#e5f0ec] px-3 py-1 text-xs font-extrabold text-[#173e35]">0</span>
+        </div>
+
+        <!-- Customer Cards Container -->
+        <div id="customer-history-container" class="space-y-3"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ==================== MODALS (DELETE, RESTORE, WHATSAPP FALLBACK) ==================== -->
+
+  <!-- Delete Confirmation Modal -->
+  <div id="modal-delete" class="modal-backdrop hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4">
+    <div class="animate-fade-up w-full max-w-sm rounded-3xl bg-white border border-[#e5dec9] p-5 shadow-2xl">
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fdecec] text-[#c6362f] mb-3">
+        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+        </svg>
+      </div>
+      <h3 id="modal-delete-title" class="text-center text-base font-extrabold text-[#1a2421]">नाप डिलीट करें?</h3>
+      <p id="modal-delete-desc" class="mt-2 text-center text-xs font-medium text-[#5a6863] leading-relaxed"></p>
+      <div class="mt-5 grid grid-cols-2 gap-2.5">
+        <button id="btn-cancel-delete" type="button" class="min-h-[44px] rounded-xl border border-[#d8cfb7] bg-[#faf8f2] px-3 py-2 text-xs font-bold text-[#5a6863] active:scale-95">रद्द करें</button>
+        <button id="btn-confirm-delete" type="button" class="min-h-[44px] rounded-xl bg-[#c6362f] px-3 py-2 text-xs font-bold text-white shadow-sm active:scale-95">हाँ, डिलीट करें</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Restore Backup Choice Modal (Merge vs Replace) -->
+  <div id="modal-restore" class="modal-backdrop hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4">
+    <div class="animate-fade-up w-full max-w-sm rounded-3xl bg-white border border-[#e5dec9] p-5 shadow-2xl">
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e5f0ec] text-[#173e35] mb-3">
+        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/>
+        </svg>
+      </div>
+      <h3 id="modal-restore-title" class="text-center text-base font-extrabold text-[#1a2421]">बैकअप रीस्टोर करें</h3>
+      <p id="modal-restore-desc" class="mt-2 text-center text-xs font-medium text-[#5a6863] leading-relaxed"></p>
+      <div class="mt-4 space-y-2.5">
+        <button id="btn-restore-merge" type="button" class="w-full min-h-[46px] rounded-xl bg-[#173e35] px-4 py-2.5 text-xs font-bold text-white shadow-sm active:scale-[0.98]">
+          मर्ज करें (मौजूदा डेटा में जोड़ें)
+        </button>
+        <button id="btn-restore-replace" type="button" class="w-full min-h-[46px] rounded-xl bg-[#fef6e4] border border-[#f0d599] px-4 py-2.5 text-xs font-bold text-[#94600a] active:scale-[0.98]">
+          बदलें (पुराना हटाकर नया डालें)
+        </button>
+        <button id="btn-restore-cancel" type="button" class="w-full min-h-[42px] rounded-xl border border-[#d8cfb7] bg-[#faf8f2] px-4 py-2 text-xs font-bold text-[#5a6863] active:scale-[0.98]">
+          रद्द करें
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WhatsApp Share & Copy Preview Modal -->
+  <div id="modal-share" class="modal-backdrop hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4">
+    <div class="animate-fade-up w-full max-w-md rounded-3xl bg-white border border-[#e5dec9] p-5 shadow-2xl">
+      <div class="flex items-center justify-between mb-3">
+        <h3 id="modal-share-title" class="text-base font-extrabold text-[#173e35]">WhatsApp शेयर करें</h3>
+        <button id="btn-close-share" type="button" class="rounded-full p-1.5 text-[#5a6863] hover:bg-[#faf8f2]" aria-label="Close">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <textarea id="share-preview-text" readonly rows="9"
+        class="w-full rounded-2xl border border-[#e5dec9] bg-[#faf8f2] p-3 text-xs font-medium text-[#1a2421] leading-relaxed focus:outline-none"></textarea>
+      <div class="mt-4 grid grid-cols-2 gap-2.5">
+        <button id="btn-copy-share-text" type="button"
+          class="min-h-[46px] flex items-center justify-center gap-1.5 rounded-xl border border-[#d8cfb7] bg-[#faf8f2] px-3 py-2 text-xs font-bold text-[#173e35] active:scale-95">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          <span id="lbl-btn-copy-text">कॉपी करें</span>
+        </button>
+        <a id="link-open-whatsapp" href="#" target="_blank" rel="noopener noreferrer"
+          class="min-h-[46px] flex items-center justify-center gap-1.5 rounded-xl bg-[#1e8e4e] px-3 py-2 text-xs font-bold text-white shadow-sm active:scale-95">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12.03 2C6.5 2 2 6.48 2 12c0 1.97.57 3.81 1.56 5.36L2 22l4.8-1.52A9.96 9.96 0 0 0 12.03 22C17.55 22 22 17.52 22 12S17.55 2 12.03 2z"/>
+          </svg>
+          <span id="lbl-btn-open-wa">WhatsApp खोलें</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="pointer-events-none fixed bottom-5 left-1/2 z-50 -translate-x-1/2 flex flex-col items-center gap-2 w-[92%] max-w-sm"></div>
+
+  <!-- Off-Screen Stage for Devanagari PDF Rendering -->
+  <div id="pdf-render-stage" aria-hidden="true"></div>
+
+  <!-- Print Sheet (Visible only in @media print) -->
+  <div id="print-sheet"></div>
+
+  <!-- ==================== APPLICATION LOGIC (ES MODULE + FIRESTORE) ==================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    /* =====================================================================
+       1. CONSTANTS, WORK TYPES (EXACT 13), UNITS (EXACT 5) & TRANSLATIONS
+       ===================================================================== */
+
+    const WORK_TYPES = [
+      { id: 'aluminium_door_slider', hi: 'एल्युमिनियम डोर स्लाइडर (Aluminium Door Slider)', en: 'Aluminium Door Slider' },
+      { id: 'aluminium_window_slider', hi: 'एल्युमिनियम विंडो स्लाइडर (Aluminium Window Slider)', en: 'Aluminium Window Slider' },
+      { id: 'ventilator', hi: 'वेंटिलेटर / रोशनदान (Ventilator)', en: 'Ventilator' },
+      { id: 'partition', hi: 'पार्टीशन (Partition)', en: 'Partition' },
+      { id: 'window', hi: 'विंडो / खिड़की (Window)', en: 'Window' },
+      { id: 'ply_door', hi: 'प्लाई डोर (Ply Door)', en: 'Ply Door' },
+      { id: 'wardrobe', hi: 'वार्डरोब / अलमारी (Wardrobe)', en: 'Wardrobe' },
+      { id: 'ply_wardrobe', hi: 'प्लाई वार्डरोब (Ply Wardrobe)', en: 'Ply Wardrobe' },
+      { id: 'kitchen_cabinet', hi: 'किचन कैबिनेट (Kitchen Cabinet)', en: 'Kitchen Cabinet' },
+      { id: 'wood_door', hi: 'वुड डोर / लकड़ी दरवाजा (Wood Door)', en: 'Wood Door' },
+      { id: 'grill_door', hi: 'ग्रिल डोर (Grill Door)', en: 'Grill Door' },
+      { id: 'wood_window', hi: 'वुड विंडो / लकड़ी खिड़की (Wood Window)', en: 'Wood Window' },
+      { id: 'other_work', hi: 'अन्य काम (Other Work)', en: 'Other Work' }
+    ];
+
+    const DEPTH_REQUIRED_TYPES = new Set(['kitchen_cabinet', 'ply_wardrobe']);
+
+    const UNITS = [
+      { id: 'feet', hi: 'फीट (Feet)', en: 'Feet', shortHi: 'फीट', shortEn: 'ft' },
+      { id: 'inch_suta', hi: 'इंच + सूत (Inch + Suta)', en: 'Inch + Suta', shortHi: 'इंच', shortEn: 'in' },
+      { id: 'inch', hi: 'इंच (Inch)', en: 'Inch', shortHi: 'इंच', shortEn: 'in' },
+      { id: 'cm', hi: 'सेंटीमीटर (CM)', en: 'CM', shortHi: 'सेमी', shortEn: 'cm' },
+      { id: 'mm', hi: 'मिलीमीटर (MM)', en: 'MM', shortHi: 'मिमी', shortEn: 'mm' }
+    ];
+
+    const I18N = {
+      hi: {
+        appTitle: 'मिस्त्री नापी',
+        appSubtitle: 'कारपेंटर एवं एल्युमिनियम माप बुक',
+        langToggle: 'English',
+        backup: 'बैकअप',
+        restore: 'रीस्टोर',
+        syncConnecting: 'कनेक्ट हो रहा है...',
+        syncSaved: 'सुरक्षित सेव्ड',
+        syncSession: 'ऑफ़लाइन मोड',
+        statMeasurements: 'कुल नाप',
+        statPieces: 'कुल पीस',
+        statCustomers: 'कुल ग्राहक',
+        tabForm: 'नया नाप',
+        tabList: 'नाप सूची',
+        tabHistory: 'ग्राहक हिस्ट्री',
+        editBanner: 'नाप संपादित कर रहे हैं',
+        cancelEdit: 'रद्द करें',
+        formHeadingNew: 'नया नाप दर्ज करें',
+        formHeadingEdit: 'नाप अपडेट करें',
+        requiredNote: '* आवश्यक फ़ील्ड',
+        workType: 'काम का प्रकार *',
+        depthNotice: 'किचन कैबिनेट और प्लाई वार्डरोब के लिए गहराई (Depth) भरना अनिवार्य है।',
+        customer: 'ग्राहक / साइट का नाम *',
+        customerPh: 'जैसे: राजेश शर्मा साइट',
+        room: 'कमरा / स्थान *',
+        roomPh: 'जैसे: मास्टर बेडरूम, हॉल',
+        unit: 'माप की इकाई (Unit) *',
+        qty: 'मात्रा (पीस)',
+        dimensionsTitle: 'माप विवरण (Dimensions)',
+        sutaHint: '1 इंच = 8 सूत (0–7)',
+        sutaTag: 'सूत',
+        width: 'चौड़ाई (Width) *',
+        height: 'ऊँचाई (Height) *',
+        depth: 'गहराई (Depth)',
+        depthOptional: '(वैकल्पिक)',
+        depthRequiredMark: '*',
+        liveArea: 'अनुमानित क्षेत्रफल (Sq.Ft.)',
+        liveAreaForPieces: (q, per) => q > 1 ? `${per} Sq.Ft. × ${q} पीस` : '1 पीस के लिए',
+        notes: 'नोट्स / विशेष विवरण',
+        notesPh: 'जैसे: 5mm टफन ग्लास, ब्लैक पाउडर कोटिंग, सॉफ्ट क्लोज़ कब्ज़ा...',
+        clearBtn: 'साफ़ करें',
+        saveBtn: 'नाप सेव करें',
+        updateBtn: 'नाप अपडेट करें',
+        searchPh: 'ग्राहक, कमरा, काम या नोट्स खोजें...',
+        allView: 'सभी देखें',
+        filteringBy: (c) => `ग्राहक फ़िल्टर: ${c}`,
+        shareAll: 'WhatsApp',
+        exportPdf: 'PDF',
+        printBtn: 'प्रिंट',
+        listShowing: (n) => `दिख रहे हैं: ${n} नाप`,
+        listTotalSqft: (a) => `कुल: ${a} Sq.Ft.`,
+        historyHeading: 'ग्राहक अनुसार हिस्ट्री',
+        historySub: 'साइट के हिसाब से सभी नाप, पीस और Sq.Ft.',
+        emptyListTitle: 'अभी कोई नाप सेव नहीं है',
+        emptyListDesc: '"नया नाप" टैब में जाकर अपना पहला नाप दर्ज करें।',
+        emptySearchTitle: 'कोई मिलता-जुलता नाप नहीं मिला',
+        emptySearchDesc: 'कृपया खोज शब्द बदलें या फ़िल्टर हटाएँ।',
+        emptyHistoryTitle: 'ग्राहक हिस्ट्री खाली है',
+        emptyHistoryDesc: 'नाप सेव करते ही यहाँ ग्राहक अनुसार सारा रिकॉर्ड दिखेगा।',
+        cardWidth: 'चौड़ाई',
+        cardHeight: 'ऊँचाई',
+        cardDepth: 'गहराई',
+        cardQty: 'पीस',
+        cardArea: 'क्षेत्रफल',
+        cardNotes: 'नोट्स',
+        btnEdit: 'बदलें',
+        btnDelete: 'डिलीट',
+        btnWa: 'WhatsApp',
+        btnCopy: 'कॉपी',
+        histEntries: 'नाप',
+        histPieces: 'कुल पीस',
+        histArea: 'कुल Sq.Ft.',
+        histLastUpdated: 'अंतिम अपडेट',
+        histViewList: 'सूची देखें',
+        histPdf: 'PDF',
+        generalCustomer: 'सामान्य साइट',
+        deleteTitle: 'नाप डिलीट करें?',
+        deleteDesc: (c, w, r) => `क्या आप "${c}" (${w} - ${r}) का यह नाप हमेशा के लिए हटाना चाहते हैं?`,
+        deleteCancel: 'रद्द करें',
+        deleteConfirm: 'हाँ, डिलीट करें',
+        restoreTitle: 'बैकअप रीस्टोर करें',
+        restoreDesc: (n) => `इस बैकअप फ़ाइल में ${n} वैध नाप मिले हैं। आप इन्हें कैसे रीस्टोर करना चाहते हैं?`,
+        restoreMerge: 'मर्ज करें (मौजूदा डेटा में जोड़ें)',
+        restoreReplace: 'बदलें (पुराना हटाकर नया डालें)',
+        restoreCancel: 'रद्द करें',
+        shareModalTitle: 'WhatsApp शेयर करें',
+        copyTextBtn: 'कॉपी करें',
+        openWaBtn: 'WhatsApp खोलें',
+        errCustomer: 'कृपया ग्राहक / साइट का नाम दर्ज करें।',
+        errRoom: 'कृपया कमरा / स्थान दर्ज करें।',
+        errWidth: 'कृपया सही चौड़ाई (Width) दर्ज करें।',
+        errHeight: 'कृपया सही ऊँचाई (Height) दर्ज करें।',
+        errDepthReq: 'किचन कैबिनेट और प्लाई वार्डरोब के लिए गहराई (Depth) भरना अनिवार्य है।',
+        errSutaRange: 'सूत (Suta) का मान 0 से 7 के बीच होना चाहिए।',
+        errQty: 'मात्रा (Quantity) कम से कम 1 होनी चाहिए।',
+        toastSaved: 'नाप सफलतापूर्वक सेव हो गया!',
+        toastUpdated: 'नाप अपडेट हो गया!',
+        toastDeleted: 'नाप डिलीट हो गया।',
+        toastCopied: 'टेक्स्ट क्लिपबोर्ड पर कॉपी हो गया!',
+        toastNoRecords: 'शेयर या एक्सपोर्ट करने के लिए कोई नाप नहीं है।',
+        toastBackupDone: 'बैकअप फ़ाइल डाउनलोड हो गई!',
+        toastRestoreMerged: (n) => `${n} नाप सफलतापूर्वक मर्ज हो गए!`,
+        toastRestoreReplaced: (n) => `डेटा बदलकर ${n} नाप रीस्टोर किए गए!`,
+        toastInvalidBackup: 'अमान्य बैकअप फ़ाइल। कृपया सही JSON फ़ाइल चुनें।',
+        toastPdfWorking: 'PDF तैयार हो रही है, कृपया प्रतीक्षा करें...',
+        toastPdfDone: 'PDF डाउनलोड हो गई!',
+        toastPdfFail: 'PDF बनाने में समस्या आई। कृपया प्रिंट विकल्प आज़माएँ।',
+        pdfReportTitle: 'मिस्त्री नापी - माप रिपोर्ट',
+        pdfGeneratedOn: 'दिनांक',
+        pdfCustomerScope: 'ग्राहक / साइट',
+        pdfAllCustomers: 'सभी ग्राहक',
+        pdfColSno: 'क्र.',
+        pdfColCustomerRoom: 'ग्राहक / कमरा',
+        pdfColWork: 'काम का प्रकार',
+        pdfColSize: 'माप (चौ. × ऊँ. × ग.)',
+        pdfColQty: 'पीस',
+        pdfColSqft: 'Sq.Ft.',
+        pdfColNotes: 'नोट्स / समय',
+        waSingleHeader: '📐 *मिस्त्री नापी - माप विवरण*',
+        waAllHeader: '📐 *मिस्त्री नापी - माप सूची*',
+        waCustomer: 'ग्राहक/साइट',
+        waRoom: 'कमरा/स्थान',
+        waWork: 'काम',
+        waSize: 'माप',
+        waDepth: 'गहराई',
+        waQty: 'मात्रा',
+        waArea: 'क्षेत्रफल',
+        waNotes: 'नोट्स',
+        waDate: 'दिनांक',
+        waTotalSummary: 'कुल सारांश'
+      },
+      en: {
+        appTitle: 'Mistri Napi',
+        appSubtitle: 'Carpenter & Aluminium Measurement Book',
+        langToggle: 'हिन्दी',
+        backup: 'Backup',
+        restore: 'Restore',
+        syncConnecting: 'Connecting...',
+        syncSaved: 'Cloud Saved',
+        syncSession: 'Offline Mode',
+        statMeasurements: 'Measurements',
+        statPieces: 'Total Pieces',
+        statCustomers: 'Customers',
+        tabForm: 'New Entry',
+        tabList: 'Measurements',
+        tabHistory: 'Customers',
+        editBanner: 'Editing Measurement',
+        cancelEdit: 'Cancel',
+        formHeadingNew: 'Add New Measurement',
+        formHeadingEdit: 'Update Measurement',
+        requiredNote: '* Required fields',
+        workType: 'Work Type *',
+        depthNotice: 'Depth is required for Kitchen Cabinet and Ply Wardrobe.',
+        customer: 'Customer / Site Name *',
+        customerPh: 'e.g. Rajesh Sharma Site',
+        room: 'Room / Location *',
+        roomPh: 'e.g. Master Bedroom, Hall',
+        unit: 'Measurement Unit *',
+        qty: 'Qty (Pcs)',
+        dimensionsTitle: 'Dimensions',
+        sutaHint: '1 Inch = 8 Suta (0–7)',
+        sutaTag: 'Suta',
+        width: 'Width *',
+        height: 'Height *',
+        depth: 'Depth',
+        depthOptional: '(Optional)',
+        depthRequiredMark: '*',
+        liveArea: 'Estimated Area (Sq.Ft.)',
+        liveAreaForPieces: (q, per) => q > 1 ? `${per} Sq.Ft. × ${q} pcs` : 'For 1 piece',
+        notes: 'Notes / Specifications',
+        notesPh: 'e.g. 5mm toughened glass, black powder coating, soft-close hinges...',
+        clearBtn: 'Clear',
+        saveBtn: 'Save Measurement',
+        updateBtn: 'Update Measurement',
+        searchPh: 'Search customer, room, work type or notes...',
+        allView: 'Show All',
+        filteringBy: (c) => `Customer Filter: ${c}`,
+        shareAll: 'WhatsApp',
+        exportPdf: 'PDF',
+        printBtn: 'Print',
+        listShowing: (n) => `Showing: ${n} measurement${n === 1 ? '' : 's'}`,
+        listTotalSqft: (a) => `Total: ${a} Sq.Ft.`,
+        historyHeading: 'Customer-Wise History',
+        historySub: 'Grouped by site with entries, pieces & total Sq.Ft.',
+        emptyListTitle: 'No Measurements Saved Yet',
+        emptyListDesc: 'Go to "New Entry" tab to record your first site measurement.',
+        emptySearchTitle: 'No Matching Measurements',
+        emptySearchDesc: 'Try a different search keyword or clear the filter.',
+        emptyHistoryTitle: 'Customer History is Empty',
+        emptyHistoryDesc: 'Saved measurements will automatically appear grouped by customer here.',
+        cardWidth: 'Width',
+        cardHeight: 'Height',
+        cardDepth: 'Depth',
+        cardQty: 'Qty',
+        cardArea: 'Area',
+        cardNotes: 'Notes',
+        btnEdit: 'Edit',
+        btnDelete: 'Delete',
+        btnWa: 'WhatsApp',
+        btnCopy: 'Copy',
+        histEntries: 'Entries',
+        histPieces: 'Pieces',
+        histArea: 'Total Sq.Ft.',
+        histLastUpdated: 'Last Updated',
+        histViewList: 'View List',
+        histPdf: 'PDF',
+        generalCustomer: 'General Site',
+        deleteTitle: 'Delete Measurement?',
+        deleteDesc: (c, w, r) => `Are you sure you want to permanently delete "${c}" (${w} - ${r})?`,
+        deleteCancel: 'Cancel',
+        deleteConfirm: 'Yes, Delete',
+        restoreTitle: 'Restore Backup',
+        restoreDesc: (n) => `Found ${n} valid measurement record${n === 1 ? '' : 's'} in this backup file. How would you like to restore them?`,
+        restoreMerge: 'Merge (Add to existing data)',
+        restoreReplace: 'Replace (Overwrite existing data)',
+        restoreCancel: 'Cancel',
+        shareModalTitle: 'Share via WhatsApp',
+        copyTextBtn: 'Copy Text',
+        openWaBtn: 'Open WhatsApp',
+        errCustomer: 'Please enter Customer / Site Name.',
+        errRoom: 'Please enter Room / Location.',
+        errWidth: 'Please enter a valid Width.',
+        errHeight: 'Please enter a valid Height.',
+        errDepthReq: 'Depth is required for Kitchen Cabinet and Ply Wardrobe.',
+        errSutaRange: 'Suta value must be between 0 and 7.',
+        errQty: 'Quantity must be at least 1.',
+        toastSaved: 'Measurement saved successfully!',
+        toastUpdated: 'Measurement updated!',
+        toastDeleted: 'Measurement deleted.',
+        toastCopied: 'Text copied to clipboard!',
+        toastNoRecords: 'No measurements available to share or export.',
+        toastBackupDone: 'Backup JSON file downloaded!',
+        toastRestoreMerged: (n) => `Merged ${n} measurement${n === 1 ? '' : 's'} successfully!`,
+        toastRestoreReplaced: (n) => `Replaced data with ${n} measurement${n === 1 ? '' : 's'}!`,
+        toastInvalidBackup: 'Invalid backup file. Please select a valid Mistri Napi JSON file.',
+        toastPdfWorking: 'Generating PDF, please wait...',
+        toastPdfDone: 'PDF downloaded successfully!',
+        toastPdfFail: 'Could not generate PDF. Please try the Print option.',
+        pdfReportTitle: 'Mistri Napi - Measurement Report',
+        pdfGeneratedOn: 'Date',
+        pdfCustomerScope: 'Customer / Site',
+        pdfAllCustomers: 'All Customers',
+        pdfColSno: '#',
+        pdfColCustomerRoom: 'Customer / Room',
+        pdfColWork: 'Work Type',
+        pdfColSize: 'Size (W × H × D)',
+        pdfColQty: 'Qty',
+        pdfColSqft: 'Sq.Ft.',
+        pdfColNotes: 'Notes / Time',
+        waSingleHeader: '📐 *Mistri Napi - Measurement*',
+        waAllHeader: '📐 *Mistri Napi - Measurement List*',
+        waCustomer: 'Customer/Site',
+        waRoom: 'Room/Location',
+        waWork: 'Work Type',
+        waSize: 'Size',
+        waDepth: 'Depth',
+        waQty: 'Qty',
+        waArea: 'Area',
+        waNotes: 'Notes',
+        waDate: 'Date/Time',
+        waTotalSummary: 'Total Summary'
+      }
+    };
+
+    /* =====================================================================
+       2. APPLICATION STATE & FIREBASE CLOUD STORAGE SETUP
+       ===================================================================== */
+
+    const state = {
+      lang: 'hi',
+      activeTab: 'form',
+      measurements: [],
+      editingId: null,
+      searchQuery: '',
+      customerFilter: '',
+      pendingDeleteId: null,
+      pendingRestoreRecords: null,
+      isCloudReady: false
+    };
+
+    let db = null;
+    let auth = null;
+    let currentUser = null;
+    let unsubscribeMeasurements = null;
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'mistri-napi-app';
+
+    /**
+     * Initialize Firebase Authentication and Firestore strictly following:
+     * Rule 1: Strict path /artifacts/{appId}/users/{userId}/{collectionName}
+     * Rule 2: Simple collection query without compound orderBy/where
+     * Rule 3: Await auth (custom token priority, fallback anonymous) before queries
+     */
+    async function initCloudStorage() {
+      try {
+        if (typeof __firebase_config === 'undefined' || !__firebase_config) {
+          updateSyncBadge(false);
+          return;
+        }
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        // Authenticate FIRST before any Firestore access
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+
+        onAuthStateChanged(auth, (user) => {
+          currentUser = user;
+          if (!currentUser) {
+            updateSyncBadge(false);
+            return;
+          }
+          state.isCloudReady = true;
+          updateSyncBadge(true);
+          subscribeToUserData();
+        });
+      } catch (err) {
+        console.error('Storage initialization note:', err);
+        updateSyncBadge(false);
+      }
+    }
+
+    function updateSyncBadge(connected) {
+      const dot = document.getElementById('sync-dot');
+      const lbl = document.getElementById('lbl-sync-status');
+      const t = I18N[state.lang];
+      if (connected) {
+        dot.className = 'h-2 w-2 rounded-full bg-emerald-400';
+        lbl.textContent = t.syncSaved;
+      } else {
+        dot.className = 'h-2 w-2 rounded-full bg-amber-300';
+        lbl.textContent = t.syncSession;
+      }
+    }
+
+    /**
+     * Subscribe to user measurements & language preference in real time.
+     */
+    function subscribeToUserData() {
+      if (!db || !currentUser) return;
+      const userId = currentUser.uid;
+
+      // Subscribe to language preference
+      const prefRef = doc(db, 'artifacts', appId, 'users', userId, 'settings', 'preferences');
+      onSnapshot(
+        prefRef,
+        (snap) => {
+          if (snap.exists()) {
+            const data = snap.data();
+            if (data.lang && (data.lang === 'hi' || data.lang === 'en') && data.lang !== state.lang) {
+              state.lang = data.lang;
+              applyLanguage();
+            }
+          }
+        },
+        (err) => console.error('Preferences sync error:', err)
+      );
+
+      // Subscribe to measurements collection (simple query, sorted in memory)
+      if (unsubscribeMeasurements) unsubscribeMeasurements();
+      const colRef = collection(db, 'artifacts', appId, 'users', userId, 'measurements');
+      unsubscribeMeasurements = onSnapshot(
+        colRef,
+        (snapshot) => {
+          const list = [];
+          snapshot.forEach((docSnap) => {
+            const d = docSnap.data();
+            list.push(normalizeRecord({ ...d, id: docSnap.id }));
+          });
+          // Sort newest first in JS memory
+          list.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+          state.measurements = list;
+          renderAll();
+        },
+        (err) => {
+          console.error('Measurements listener error:', err);
+          updateSyncBadge(false);
+        }
+      );
+    }
+
+    async function persistMeasurement(record) {
+      // Optimistically update in-memory state immediately
+      const idx = state.measurements.findIndex((m) => m.id === record.id);
+      if (idx >= 0) {
+        state.measurements[idx] = record;
+      } else {
+        state.measurements.unshift(record);
+      }
+      state.measurements.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+      renderAll();
+
+      if (!db || !currentUser) return;
+      try {
+        const ref = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'measurements', record.id);
+        await setDoc(ref, record);
+      } catch (err) {
+        console.error('Cloud save error:', err);
+      }
+    }
+
+    async function removeMeasurement(id) {
+      state.measurements = state.measurements.filter((m) => m.id !== id);
+      renderAll();
+
+      if (!db || !currentUser) return;
+      try {
+        const ref = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'measurements', id);
+        await deleteDoc(ref);
+      } catch (err) {
+        console.error('Cloud delete error:', err);
+      }
+    }
+
+    async function persistLanguagePref(lang) {
+      if (!db || !currentUser) return;
+      try {
+        const prefRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'preferences');
+        await setDoc(prefRef, { lang, updatedAt: Date.now() }, { merge: true });
+      } catch (err) {
+        console.error('Language pref save error:', err);
+      }
+    }
+
+    /* =====================================================================
+       3. MEASUREMENT MATH, UNIT CONVERSIONS & FORMATTING HELPERS
+       ===================================================================== */
+
+    function generateId() {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return 'mn_' + crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+      }
+      return 'mn_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+    }
+
+    /**
+     * Converts a dimension value (+ optional suta for inch_suta) into Feet.
+     * Exact formula: 1 inch = 8 suta, 1 foot = 12 inches, 1 foot = 30.48 cm = 304.8 mm
+     */
+    function toFeet(value, suta, unit) {
+      const v = parseFloat(value) || 0;
+      const s = parseFloat(suta) || 0;
+      switch (unit) {
+        case 'feet':
+          return v;
+        case 'inch_suta':
+          return (v + (s / 8)) / 12;
+        case 'inch':
+          return v / 12;
+        case 'cm':
+          return v / 30.48;
+        case 'mm':
+          return v / 304.8;
+        default:
+          return v;
+      }
+    }
+
+    function calculateAreaSqFt(width, widthSuta, height, heightSuta, unit, qty = 1) {
+      const wFt = toFeet(width, widthSuta, unit);
+      const hFt = toFeet(height, heightSuta, unit);
+      if (wFt <= 0 || hFt <= 0) return { perPiece: 0, total: 0 };
+      const perPiece = wFt * hFt;
+      const quantity = Math.max(1, parseInt(qty, 10) || 1);
+      return {
+        perPiece,
+        total: perPiece * quantity
+      };
+    }
+
+    function formatNumber(n) {
+      const num = parseFloat(n);
+      if (isNaN(num)) return '0';
+      return Number.isInteger(num) ? String(num) : String(parseFloat(num.toFixed(2)));
+    }
+
+    function formatSingleDimension(val, suta, unit, lang = state.lang) {
+      const v = parseFloat(val);
+      const s = parseInt(suta, 10) || 0;
+      if ((isNaN(v) || v <= 0) && s <= 0) return '';
+      const cleanVal = isNaN(v) ? '0' : formatNumber(v);
+
+      if (unit === 'inch_suta') {
+        const sutaLabel = lang === 'hi' ? 'सूत' : 's';
+        if (s > 0) return `${cleanVal}" ${s}${lang === 'hi' ? ' ' : ''}${sutaLabel}`;
+        return `${cleanVal}"`;
+      }
+      const unitObj = UNITS.find((u) => u.id === unit) || UNITS[0];
+      const suffix = lang === 'hi' ? unitObj.shortHi : unitObj.shortEn;
+      return `${cleanVal} ${suffix}`;
+    }
+
+    function formatDimensionLine(m, lang = state.lang) {
+      const w = formatSingleDimension(m.width, m.widthSuta, m.unit, lang);
+      const h = formatSingleDimension(m.height, m.heightSuta, m.unit, lang);
+      const d = formatSingleDimension(m.depth, m.depthSuta, m.unit, lang);
+      return d ? `${w} × ${h} × ${d}` : `${w} × ${h}`;
+    }
+
+    function getWorkTypeLabel(workTypeId, lang = state.lang) {
+      const found = WORK_TYPES.find((w) => w.id === workTypeId);
+      if (!found) return workTypeId || '';
+      return lang === 'hi' ? found.hi : found.en;
+    }
+
+    function getUnitLabel(unitId, lang = state.lang) {
+      const found = UNITS.find((u) => u.id === unitId);
+      if (!found) return unitId || '';
+      return lang === 'hi' ? found.hi : found.en;
+    }
+
+    function formatDateTime(ts) {
+      const date = new Date(ts || Date.now());
+      if (isNaN(date.getTime())) return '';
+      return date.toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function normalizeRecord(raw) {
+      const unit = UNITS.some((u) => u.id === raw.unit) ? raw.unit : 'feet';
+      const workType = WORK_TYPES.some((w) => w.id === raw.workType) ? raw.workType : 'other_work';
+      const width = parseFloat(raw.width) || 0;
+      const widthSuta = unit === 'inch_suta' ? Math.min(7, Math.max(0, parseInt(raw.widthSuta, 10) || 0)) : 0;
+      const height = parseFloat(raw.height) || 0;
+      const heightSuta = unit === 'inch_suta' ? Math.min(7, Math.max(0, parseInt(raw.heightSuta, 10) || 0)) : 0;
+      const depth = raw.depth !== '' && raw.depth !== null && raw.depth !== undefined ? (parseFloat(raw.depth) || 0) : 0;
+      const depthSuta = unit === 'inch_suta' ? Math.min(7, Math.max(0, parseInt(raw.depthSuta, 10) || 0)) : 0;
+      const quantity = Math.max(1, parseInt(raw.quantity, 10) || 1);
+      const area = calculateAreaSqFt(width, widthSuta, height, heightSuta, unit, quantity);
+
+      return {
+        id: String(raw.id || generateId()),
+        workType,
+        customerName: String(raw.customerName || '').trim(),
+        roomLocation: String(raw.roomLocation || '').trim(),
+        unit,
+        width,
+        widthSuta,
+        height,
+        heightSuta,
+        depth,
+        depthSuta,
+        quantity,
+        notes: String(raw.notes || '').trim(),
+        sqftPerPiece: parseFloat(area.perPiece.toFixed(2)),
+        totalSqft: parseFloat(area.total.toFixed(2)),
+        createdAt: Number(raw.createdAt) || Date.now(),
+        updatedAt: Number(raw.updatedAt) || Number(raw.createdAt) || Date.now()
+      };
+    }
+
+    /* =====================================================================
+       4. UI DOM REFERENCES
+       ===================================================================== */
+
+    const el = {
+      form: document.getElementById('measurement-form'),
+      workType: document.getElementById('field-work-type'),
+      customer: document.getElementById('field-customer'),
+      customerDatalist: document.getElementById('customer-datalist'),
+      room: document.getElementById('field-room'),
+      unit: document.getElementById('field-unit'),
+      qty: document.getElementById('field-qty'),
+      width: document.getElementById('field-width'),
+      widthSuta: document.getElementById('field-width-suta'),
+      height: document.getElementById('field-height'),
+      heightSuta: document.getElementById('field-height-suta'),
+      depth: document.getElementById('field-depth'),
+      depthSuta: document.getElementById('field-depth-suta'),
+      notes: document.getElementById('field-notes'),
+      depthNotice: document.getElementById('depth-required-notice'),
+      sutaHintPill: document.getElementById('suta-hint-pill'),
+      formErrorBox: document.getElementById('form-error-box'),
+      editBanner: document.getElementById('edit-mode-banner'),
+      liveSqftValue: document.getElementById('live-sqft-value'),
+      liveAreaSub: document.getElementById('live-area-sub'),
+      search: document.getElementById('field-search'),
+      btnClearSearch: document.getElementById('btn-clear-search'),
+      listContainer: document.getElementById('measurements-list-container'),
+      historyContainer: document.getElementById('customer-history-container'),
+      activeFilterBar: document.getElementById('active-customer-filter-bar'),
+      activeFilterText: document.getElementById('lbl-active-filter-text'),
+      modalDelete: document.getElementById('modal-delete'),
+      modalRestore: document.getElementById('modal-restore'),
+      modalShare: document.getElementById('modal-share'),
+      sharePreviewText: document.getElementById('share-preview-text'),
+      linkOpenWa: document.getElementById('link-open-whatsapp'),
+      toastContainer: document.getElementById('toast-container'),
+      inputRestoreFile: document.getElementById('input-restore-file'),
+      pdfStage: document.getElementById('pdf-render-stage'),
+      printSheet: document.getElementById('print-sheet')
+    };
+
+    /* =====================================================================
+       5. LANGUAGE TRANSLATION ENGINE (HINDI DEFAULT / ENGLISH TOGGLE)
+       ===================================================================== */
+
+    function populateDropdowns() {
+      const prevWork = el.workType.value || WORK_TYPES[0].id;
+      const prevUnit = el.unit.value || UNITS[0].id;
+
+      el.workType.innerHTML = WORK_TYPES.map((w) =>
+        `<option value="${w.id}">${escapeHtml(state.lang === 'hi' ? w.hi : w.en)}</option>`
+      ).join('');
+      el.workType.value = prevWork;
+
+      el.unit.innerHTML = UNITS.map((u) =>
+        `<option value="${u.id}">${escapeHtml(state.lang === 'hi' ? u.hi : u.en)}</option>`
+      ).join('');
+      el.unit.value = prevUnit;
+    }
+
+    function applyLanguage() {
+      const t = I18N[state.lang];
+      document.documentElement.lang = state.lang;
+
+      // Header
+      document.getElementById('hdr-title').textContent = t.appTitle;
+      document.getElementById('hdr-subtitle').textContent = t.appSubtitle;
+      document.getElementById('lbl-lang-btn').textContent = t.langToggle;
+      document.getElementById('lbl-backup').textContent = t.backup;
+      document.getElementById('lbl-restore').textContent = t.restore;
+      updateSyncBadge(state.isCloudReady);
+
+      // Stats
+      document.getElementById('lbl-stat-measurements').textContent = t.statMeasurements;
+      document.getElementById('lbl-stat-pieces').textContent = t.statPieces;
+      document.getElementById('lbl-stat-customers').textContent = t.statCustomers;
+
+      // Tabs
+      document.getElementById('lbl-tab-form').textContent = t.tabForm;
+      document.getElementById('lbl-tab-list').textContent = t.tabList;
+      document.getElementById('lbl-tab-history').textContent = t.tabHistory;
+
+      // Form labels & placeholders
+      document.getElementById('lbl-edit-banner').textContent = t.editBanner;
+      document.getElementById('btn-banner-cancel-edit').textContent = t.cancelEdit;
+      document.getElementById('lbl-form-heading').textContent = state.editingId ? t.formHeadingEdit : t.formHeadingNew;
+      document.getElementById('lbl-required-note').textContent = t.requiredNote;
+      document.getElementById('lbl-work-type').textContent = t.workType;
+      document.getElementById('lbl-depth-notice').textContent = t.depthNotice;
+      document.getElementById('lbl-customer').textContent = t.customer;
+      el.customer.placeholder = t.customerPh;
+      document.getElementById('lbl-room').textContent = t.room;
+      el.room.placeholder = t.roomPh;
+      document.getElementById('lbl-unit').textContent = t.unit;
+      document.getElementById('lbl-qty').textContent = t.qty;
+      document.getElementById('lbl-dimensions-title').textContent = t.dimensionsTitle;
+      el.sutaHintPill.textContent = t.sutaHint;
+      document.getElementById('lbl-width').textContent = t.width;
+      document.getElementById('lbl-height').textContent = t.height;
+      document.getElementById('lbl-live-area').textContent = t.liveArea;
+      document.getElementById('lbl-notes').textContent = t.notes;
+      el.notes.placeholder = t.notesPh;
+      document.getElementById('btn-clear-form').textContent = state.editingId ? t.cancelEdit : t.clearBtn;
+      document.getElementById('lbl-save-btn').textContent = state.editingId ? t.updateBtn : t.saveBtn;
+
+      document.querySelectorAll('.suta-inline-tag').forEach((tag) => {
+        tag.textContent = t.sutaTag;
+      });
+
+      // List & History controls
+      el.search.placeholder = t.searchPh;
+      document.getElementById('btn-clear-customer-filter').textContent = t.allView;
+      document.getElementById('lbl-btn-share-all').textContent = t.shareAll;
+      document.getElementById('lbl-btn-pdf').textContent = t.exportPdf;
+      document.getElementById('lbl-btn-print').textContent = t.printBtn;
+      document.getElementById('lbl-history-heading').textContent = t.historyHeading;
+      document.getElementById('lbl-history-sub').textContent = t.historySub;
+
+      // Modals
+      document.getElementById('modal-delete-title').textContent = t.deleteTitle;
+      document.getElementById('btn-cancel-delete').textContent = t.deleteCancel;
+      document.getElementById('btn-confirm-delete').textContent = t.deleteConfirm;
+      document.getElementById('modal-restore-title').textContent = t.restoreTitle;
+      document.getElementById('btn-restore-merge').textContent = t.restoreMerge;
+      document.getElementById('btn-restore-replace').textContent = t.restoreReplace;
+      document.getElementById('btn-restore-cancel').textContent = t.restoreCancel;
+      document.getElementById('modal-share-title').textContent = t.shareModalTitle;
+      document.getElementById('lbl-btn-copy-text').textContent = t.copyTextBtn;
+      document.getElementById('lbl-btn-open-wa').textContent = t.openWaBtn;
+
+      populateDropdowns();
+      updateDynamicFormRules();
+      updateLiveAreaPreview();
+      renderAll();
+    }
+
+    /* =====================================================================
+       6. DYNAMIC FORM LOGIC (UNIT -> SUTA, WORK TYPE -> DEPTH, LIVE SQ.FT.)
+       ===================================================================== */
+
+    function updateDynamicFormRules() {
+      const t = I18N[state.lang];
+      const unitId = el.unit.value;
+      const workTypeId = el.workType.value;
+
+      // 1. Suta visibility when Inch + Suta is selected
+      const isSuta = unitId === 'inch_suta';
+      el.sutaHintPill.classList.toggle('hidden', !isSuta);
+      document.querySelectorAll('.suta-group').forEach((grp) => {
+        grp.classList.toggle('hidden', !isSuta);
+      });
+
+      // Update inline unit tags inside width/height/depth inputs
+      const unitObj = UNITS.find((u) => u.id === unitId) || UNITS[0];
+      const shortUnit = state.lang === 'hi' ? unitObj.shortHi : unitObj.shortEn;
+      document.querySelectorAll('.unit-inline-tag').forEach((tag) => {
+        tag.textContent = shortUnit;
+      });
+
+      // 2. Depth requirement for Kitchen Cabinet & Ply Wardrobe
+      const needsDepth = DEPTH_REQUIRED_TYPES.has(workTypeId);
+      el.depthNotice.classList.toggle('hidden', !needsDepth);
+      const depthLabel = document.getElementById('lbl-depth');
+      if (needsDepth) {
+        depthLabel.innerHTML = `${escapeHtml(t.depth)} <span class="text-[#c6362f] font-extrabold">${t.depthRequiredMark}</span>`;
+        el.depth.classList.add('border-[#e0a838]');
+      } else {
+        depthLabel.innerHTML = `${escapeHtml(t.depth)} <span class="font-normal text-[#5a6863]">${escapeHtml(t.depthOptional)}</span>`;
+        el.depth.classList.remove('border-[#e0a838]');
+      }
+    }
+
+    function updateLiveAreaPreview() {
+      const t = I18N[state.lang];
+      const unit = el.unit.value;
+      const qty = Math.max(1, parseInt(el.qty.value, 10) || 1);
+      const area = calculateAreaSqFt(
+        el.width.value,
+        unit === 'inch_suta' ? el.widthSuta.value : 0,
+        el.height.value,
+        unit === 'inch_suta' ? el.heightSuta.value : 0,
+        unit,
+        qty
+      );
+      el.liveSqftValue.textContent = area.total.toFixed(2);
+      el.liveAreaSub.textContent = t.liveAreaForPieces(qty, area.perPiece.toFixed(2));
+    }
+
+    function showFormError(msg) {
+      if (!msg) {
+        el.formErrorBox.classList.add('hidden');
+        el.formErrorBox.textContent = '';
+        return;
+      }
+      el.formErrorBox.textContent = msg;
+      el.formErrorBox.classList.remove('hidden');
+    }
+
+    function clampSutaInput(inputEl) {
+      if (inputEl.value === '') return;
+      let val = parseInt(inputEl.value, 10);
+      if (isNaN(val) || val < 0) val = 0;
+      if (val > 7) val = 7;
+      inputEl.value = val;
+    }
+
+    function resetForm(keepCustomer = false) {
+      const savedCustomer = keepCustomer ? el.customer.value : '';
+      state.editingId = null;
+      el.form.reset();
+      el.qty.value = '1';
+      if (savedCustomer) el.customer.value = savedCustomer;
+      el.editBanner.classList.add('hidden');
+      showFormError('');
+
+      const t = I18N[state.lang];
+      document.getElementById('lbl-form-heading').textContent = t.formHeadingNew;
+      document.getElementById('lbl-save-btn').textContent = t.saveBtn;
+      document.getElementById('btn-clear-form').textContent = t.clearBtn;
+
+      updateDynamicFormRules();
+      updateLiveAreaPreview();
+    }
+
+    function loadRecordIntoForm(record) {
+      state.editingId = record.id;
+      el.workType.value = record.workType;
+      el.customer.value = record.customerName;
+      el.room.value = record.roomLocation;
+      el.unit.value = record.unit;
+      el.qty.value = String(record.quantity || 1);
+      el.width.value = record.width > 0 ? String(record.width) : '';
+      el.widthSuta.value = record.unit === 'inch_suta' && record.widthSuta > 0 ? String(record.widthSuta) : '';
+      el.height.value = record.height > 0 ? String(record.height) : '';
+      el.heightSuta.value = record.unit === 'inch_suta' && record.heightSuta > 0 ? String(record.heightSuta) : '';
+      el.depth.value = record.depth > 0 ? String(record.depth) : '';
+      el.depthSuta.value = record.unit === 'inch_suta' && record.depthSuta > 0 ? String(record.depthSuta) : '';
+      el.notes.value = record.notes || '';
+
+      showFormError('');
+      el.editBanner.classList.remove('hidden');
+
+      const t = I18N[state.lang];
+      document.getElementById('lbl-form-heading').textContent = t.formHeadingEdit;
+      document.getElementById('lbl-save-btn').textContent = t.updateBtn;
+      document.getElementById('btn-clear-form').textContent = t.cancelEdit;
+
+      updateDynamicFormRules();
+      updateLiveAreaPreview();
+      switchTab('form');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      showFormError('');
+      const t = I18N[state.lang];
+
+      const workType = el.workType.value;
+      const customerName = el.customer.value.trim();
+      const roomLocation = el.room.value.trim();
+      const unit = el.unit.value;
+      const isSuta = unit === 'inch_suta';
+
+      const width = parseFloat(el.width.value) || 0;
+      const widthSuta = isSuta ? (parseInt(el.widthSuta.value, 10) || 0) : 0;
+      const height = parseFloat(el.height.value) || 0;
+      const heightSuta = isSuta ? (parseInt(el.heightSuta.value, 10) || 0) : 0;
+      const depth = parseFloat(el.depth.value) || 0;
+      const depthSuta = isSuta ? (parseInt(el.depthSuta.value, 10) || 0) : 0;
+      const quantity = parseInt(el.qty.value, 10);
+      const notes = el.notes.value.trim();
+
+      // Strict Validation
+      if (!customerName) {
+        showFormError(t.errCustomer);
+        el.customer.focus();
+        return;
+      }
+      if (!roomLocation) {
+        showFormError(t.errRoom);
+        el.room.focus();
+        return;
+      }
+      if (isSuta && (widthSuta < 0 || widthSuta > 7 || heightSuta < 0 || heightSuta > 7 || depthSuta < 0 || depthSuta > 7)) {
+        showFormError(t.errSutaRange);
+        return;
+      }
+      if (width <= 0 && widthSuta <= 0) {
+        showFormError(t.errWidth);
+        el.width.focus();
+        return;
+      }
+      if (height <= 0 && heightSuta <= 0) {
+        showFormError(t.errHeight);
+        el.height.focus();
+        return;
+      }
+      if (DEPTH_REQUIRED_TYPES.has(workType) && depth <= 0 && depthSuta <= 0) {
+        showFormError(t.errDepthReq);
+        el.depth.focus();
+        return;
+      }
+      if (isNaN(quantity) || quantity < 1) {
+        showFormError(t.errQty);
+        el.qty.focus();
+        return;
+      }
+
+      const now = Date.now();
+      const existing = state.editingId ? state.measurements.find((m) => m.id === state.editingId) : null;
+      const record = normalizeRecord({
+        id: existing ? existing.id : generateId(),
+        workType,
+        customerName,
+        roomLocation,
+        unit,
+        width,
+        widthSuta,
+        height,
+        heightSuta,
+        depth,
+        depthSuta,
+        quantity,
+        notes,
+        createdAt: existing ? existing.createdAt : now,
+        updatedAt: now
+      });
+
+      const wasEditing = Boolean(existing);
+      await persistMeasurement(record);
+      resetForm(false);
+      showToast(wasEditing ? t.toastUpdated : t.toastSaved, 'success');
+      switchTab('list');
+    }
+
+    /* =====================================================================
+       7. FILTERING, STATS & RENDERING (LIST + CUSTOMER HISTORY)
+       ===================================================================== */
+
+    function getFilteredMeasurements() {
+      const q = state.searchQuery.trim().toLowerCase();
+      const custFilterKey = state.customerFilter.trim().toLowerCase();
+      const t = I18N[state.lang];
+
+      return state.measurements.filter((m) => {
+        if (custFilterKey) {
+          const recordCustKey = (m.customerName || t.generalCustomer).trim().toLowerCase();
+          if (recordCustKey !== custFilterKey) return false;
+        }
+        if (!q) return true;
+        const workHi = getWorkTypeLabel(m.workType, 'hi').toLowerCase();
+        const workEn = getWorkTypeLabel(m.workType, 'en').toLowerCase();
+        const haystack = [
+          m.customerName,
+          m.roomLocation,
+          m.notes,
+          workHi,
+          workEn
+        ].join(' ').toLowerCase();
+        return haystack.includes(q);
+      });
+    }
+
+    function getGroupedCustomers() {
+      const t = I18N[state.lang];
+      const map = new Map();
+
+      state.measurements.forEach((m) => {
+        const displayName = m.customerName || t.generalCustomer;
+        const key = displayName.trim().toLowerCase();
+        if (!map.has(key)) {
+          map.set(key, {
+            key,
+            name: displayName,
+            entries: [],
+            totalPieces: 0,
+            totalSqft: 0,
+            lastUpdated: 0
+          });
+        }
+        const g = map.get(key);
+        g.entries.push(m);
+        g.totalPieces += (m.quantity || 1);
+        g.totalSqft += (m.totalSqft || 0);
+        const ts = m.updatedAt || m.createdAt || 0;
+        if (ts > g.lastUpdated) g.lastUpdated = ts;
+      });
+
+      return Array.from(map.values()).sort((a, b) => b.lastUpdated - a.lastUpdated);
+    }
+
+    function updateStatsAndAutocomplete() {
+      const totalMeasurements = state.measurements.length;
+      const totalPieces = state.measurements.reduce((acc, m) => acc + (m.quantity || 1), 0);
+      const groups = getGroupedCustomers();
+
+      document.getElementById('stat-total-measurements').textContent = String(totalMeasurements);
+      document.getElementById('stat-total-pieces').textContent = String(totalPieces);
+      document.getElementById('stat-total-customers').textContent = String(groups.length);
+      document.getElementById('history-customer-count-pill').textContent = String(groups.length);
+
+      // Update Customer/Site autocomplete datalist
+      const uniqueNames = Array.from(new Set(state.measurements.map((m) => m.customerName).filter(Boolean))).sort();
+      el.customerDatalist.innerHTML = uniqueNames.map((name) => `<option value="${escapeHtml(name)}"></option>`).join('');
+    }
+
+    function renderMeasurementsList() {
+      const t = I18N[state.lang];
+      const items = getFilteredMeasurements();
+
+      // Update active filter bar
+      if (state.customerFilter) {
+        el.activeFilterBar.classList.remove('hidden');
+        el.activeFilterText.textContent = t.filteringBy(state.customerFilter);
+      } else {
+        el.activeFilterBar.classList.add('hidden');
+      }
+
+      // Update count & sqft summary
+      const totalSqft = items.reduce((sum, m) => sum + (m.totalSqft || 0), 0);
+      document.getElementById('lbl-list-showing').textContent = t.listShowing(items.length);
+      document.getElementById('lbl-list-sqft').textContent = t.listTotalSqft(totalSqft.toFixed(2));
+
+      if (items.length === 0) {
+        const isFiltered = Boolean(state.searchQuery.trim() || state.customerFilter);
+        el.listContainer.innerHTML = `
+          <div class="rounded-3xl bg-white border border-[#e5dec9] p-8 text-center shadow-sm">
+            <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f6f2e9] text-[#173e35]">
+              <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                <rect x="9" y="3" width="6" height="4" rx="1"/>
+                <path d="M9 12h6M9 16h4"/>
+              </svg>
+            </div>
+            <h3 class="text-sm font-extrabold text-[#1a2421]">${escapeHtml(isFiltered ? t.emptySearchTitle : t.emptyListTitle)}</h3>
+            <p class="mt-1 text-xs font-medium text-[#5a6863]">${escapeHtml(isFiltered ? t.emptySearchDesc : t.emptyListDesc)}</p>
+          </div>
+        `;
+        return;
+      }
+
+      el.listContainer.innerHTML = items.map((m) => {
+        const workLabel = getWorkTypeLabel(m.workType);
+        const wStr = formatSingleDimension(m.width, m.widthSuta, m.unit);
+        const hStr = formatSingleDimension(m.height, m.heightSuta, m.unit);
+        const dStr = formatSingleDimension(m.depth, m.depthSuta, m.unit);
+        const dateStr = formatDateTime(m.updatedAt || m.createdAt);
+
+        return `
+          <article class="rounded-3xl bg-white border border-[#e5dec9] p-4 shadow-sm space-y-3">
+            <!-- Top Row: Customer + Room + Work Badge -->
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <h3 class="truncate text-sm font-extrabold text-[#173e35]">${escapeHtml(m.customerName || t.generalCustomer)}</h3>
+                <p class="truncate text-xs font-semibold text-[#5a6863] mt-0.5">📍 ${escapeHtml(m.roomLocation)}</p>
+              </div>
+              <span class="shrink-0 max-w-[52%] truncate rounded-xl bg-[#e5f0ec] px-2.5 py-1 text-[11px] font-bold text-[#173e35]">
+                ${escapeHtml(workLabel)}
+              </span>
+            </div>
+
+            <!-- Dimension Highlight Grid -->
+            <div class="grid ${dStr ? 'grid-cols-3' : 'grid-cols-2'} gap-2 rounded-2xl bg-[#faf8f2] border border-[#ebe4d2] p-2.5 text-center">
+              <div>
+                <div class="text-[10px] font-bold uppercase text-[#5a6863]">${escapeHtml(t.cardWidth)}</div>
+                <div class="text-sm font-extrabold text-[#1a2421] mt-0.5">${escapeHtml(wStr)}</div>
+              </div>
+              <div>
+                <div class="text-[10px] font-bold uppercase text-[#5a6863]">${escapeHtml(t.cardHeight)}</div>
+                <div class="text-sm font-extrabold text-[#1a2421] mt-0.5">${escapeHtml(hStr)}</div>
+              </div>
+              ${dStr ? `
+                <div>
+                  <div class="text-[10px] font-bold uppercase text-[#5a6863]">${escapeHtml(t.cardDepth)}</div>
+                  <div class="text-sm font-extrabold text-[#1a2421] mt-0.5">${escapeHtml(dStr)}</div>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Qty, Sq.Ft. & Date Strip -->
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-2">
+                <span class="rounded-lg bg-[#f6f2e9] border border-[#e5dec9] px-2.5 py-1 font-bold text-[#1a2421]">
+                  ${escapeHtml(t.cardQty)}: ${m.quantity}
+                </span>
+                <span class="rounded-lg bg-[#e5f0ec] px-2.5 py-1 font-extrabold text-[#173e35]">
+                  ${(m.totalSqft || 0).toFixed(2)} Sq.Ft.
+                </span>
+              </div>
+              <span class="text-[11px] font-medium text-[#6e7b76]">🕒 ${escapeHtml(dateStr)}</span>
+            </div>
+
+            ${m.notes ? `
+              <div class="rounded-xl bg-[#fefcf7] border border-[#eee7d5] px-3 py-2 text-xs text-[#3b4743] leading-relaxed">
+                <span class="font-bold text-[#173e35]">${escapeHtml(t.cardNotes)}:</span> ${escapeHtml(m.notes)}
+              </div>
+            ` : ''}
+
+            <!-- Card Action Buttons -->
+            <div class="grid grid-cols-3 gap-2 pt-1 border-t border-[#f2ecdc]">
+              <button type="button" data-action="share-one" data-id="${escapeHtml(m.id)}"
+                class="min-h-[40px] flex items-center justify-center gap-1 rounded-xl bg-[#e6f5ec] text-xs font-bold text-[#1e8e4e] hover:bg-[#d5eedf] active:scale-95 transition">
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
+                </svg>
+                <span>${escapeHtml(t.btnWa)}</span>
+              </button>
+
+              <button type="button" data-action="edit" data-id="${escapeHtml(m.id)}"
+                class="min-h-[40px] flex items-center justify-center gap-1 rounded-xl bg-[#e8f2f8] text-xs font-bold text-[#1d5f8a] hover:bg-[#d7e8f3] active:scale-95 transition">
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+                <span>${escapeHtml(t.btnEdit)}</span>
+              </button>
+
+              <button type="button" data-action="delete" data-id="${escapeHtml(m.id)}"
+                class="min-h-[40px] flex items-center justify-center gap-1 rounded-xl bg-[#fdecec] text-xs font-bold text-[#c6362f] hover:bg-[#fad8d8] active:scale-95 transition">
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                </svg>
+                <span>${escapeHtml(t.btnDelete)}</span>
+              </button>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderCustomerHistory() {
+      const t = I18N[state.lang];
+      const groups = getGroupedCustomers();
+
+      if (groups.length === 0) {
+        el.historyContainer.innerHTML = `
+          <div class="rounded-3xl bg-white border border-[#e5dec9] p-8 text-center shadow-sm">
+            <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f6f2e9] text-[#173e35]">
+              <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+              </svg>
+            </div>
+            <h3 class="text-sm font-extrabold text-[#1a2421]">${escapeHtml(t.emptyHistoryTitle)}</h3>
+            <p class="mt-1 text-xs font-medium text-[#5a6863]">${escapeHtml(t.emptyHistoryDesc)}</p>
+          </div>
+        `;
+        return;
+      }
+
+      el.historyContainer.innerHTML = groups.map((g) => {
+        const lastStr = formatDateTime(g.lastUpdated);
+        return `
+          <article class="rounded-3xl bg-white border border-[#e5dec9] p-4 shadow-sm space-y-3">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <h3 class="truncate text-base font-extrabold text-[#173e35]">${escapeHtml(g.name)}</h3>
+                <p class="text-[11px] font-medium text-[#6e7b76] mt-0.5">🕒 ${escapeHtml(t.histLastUpdated)}: ${escapeHtml(lastStr)}</p>
+              </div>
+              <span class="shrink-0 rounded-full bg-[#e5f0ec] px-2.5 py-1 text-xs font-extrabold text-[#173e35]">
+                ${g.entries.length} ${escapeHtml(t.histEntries)}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 rounded-2xl bg-[#faf8f2] border border-[#ebe4d2] p-2.5 text-center">
+              <div>
+                <div class="text-[10px] font-bold text-[#5a6863]">${escapeHtml(t.histEntries)}</div>
+                <div class="text-sm font-extrabold text-[#173e35]">${g.entries.length}</div>
+              </div>
+              <div>
+                <div class="text-[10px] font-bold text-[#5a6863]">${escapeHtml(t.histPieces)}</div>
+                <div class="text-sm font-extrabold text-[#173e35]">${g.totalPieces}</div>
+              </div>
+              <div>
+                <div class="text-[10px] font-bold text-[#5a6863]">${escapeHtml(t.histArea)}</div>
+                <div class="text-sm font-extrabold text-[#173e35]">${g.totalSqft.toFixed(2)}</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 pt-1 border-t border-[#f2ecdc]">
+              <button type="button" data-hist-action="view" data-customer="${escapeHtml(g.name)}"
+                class="min-h-[40px] flex items-center justify-center gap-1 rounded-xl bg-[#173e35] text-xs font-bold text-white active:scale-95 transition">
+                <span>${escapeHtml(t.histViewList)}</span>
+              </button>
+
+              <button type="button" data-hist-action="whatsapp" data-customer="${escapeHtml(g.name)}"
+                class="min-h-[40px] flex items-center justify-center gap-1 rounded-xl bg-[#e6f5ec] border border-[#bde3cc] text-xs font-bold text-[#1e8e4e] active:scale-95 transition">
+                <span>${escapeHtml(t.btnWa)}</span>
+              </button>
+
+              <button type="button" data-hist-action="pdf" data-customer="${escapeHtml(g.name)}"
+                class="min-h-[40px] flex items-center justify-center gap-1 rounded-xl bg-[#e5f0ec] border border-[#c3dcd3] text-xs font-bold text-[#173e35] active:scale-95 transition">
+                <span>${escapeHtml(t.histPdf)}</span>
+              </button>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderAll() {
+      updateStatsAndAutocomplete();
+      renderMeasurementsList();
+      renderCustomerHistory();
+    }
+
+    /* =====================================================================
+       8. TAB SWITCHING & TOAST NOTIFICATIONS
+       ===================================================================== */
+
+    function switchTab(tabName) {
+      state.activeTab = tabName;
+      ['form', 'list', 'history'].forEach((name) => {
+        const panel = document.getElementById(`tab-panel-${name}`);
+        const btn = document.getElementById(`tab-btn-${name}`);
+        const isActive = name === tabName;
+        panel.classList.toggle('hidden', !isActive);
+        if (isActive) {
+          btn.classList.add('bg-[#173e35]', 'text-white', 'shadow-sm');
+          btn.classList.remove('text-[#5a6863]', 'hover:bg-[#faf8f2]');
+        } else {
+          btn.classList.remove('bg-[#173e35]', 'text-white', 'shadow-sm');
+          btn.classList.add('text-[#5a6863]', 'hover:bg-[#faf8f2]');
+        }
+      });
+    }
+
+    function showToast(message, type = 'info') {
+      const colors = {
+        success: 'bg-[#173e35] text-white border-[#2c6d5e]',
+        error: 'bg-[#c6362f] text-white border-[#a12620]',
+        info: 'bg-[#1a2421] text-white border-[#33443f]'
+      };
+      const toast = document.createElement('div');
+      toast.className = `pointer-events-auto animate-fade-up rounded-2xl border px-4 py-2.5 text-xs font-bold shadow-lg text-center ${colors[type] || colors.info}`;
+      toast.textContent = message;
+      el.toastContainer.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.25s ease';
+        setTimeout(() => toast.remove(), 260);
+      }, 2600);
+    }
+
+    /* =====================================================================
+       9. WHATSAPP SHARE & CLIPBOARD COPY (execCommand for iframe safety)
+       ===================================================================== */
+
+    function buildSingleWhatsAppText(m) {
+      const t = I18N[state.lang];
+      const lines = [
+        t.waSingleHeader,
+        `━━━━━━━━━━━━━━━`,
+        `👤 *${t.waCustomer}:* ${m.customerName || t.generalCustomer}`,
+        `📍 *${t.waRoom}:* ${m.roomLocation}`,
+        `🛠️ *${t.waWork}:* ${getWorkTypeLabel(m.workType)}`,
+        `📏 *${t.waSize}:* ${formatDimensionLine(m)} (${getUnitLabel(m.unit)})`,
+        `🔢 *${t.waQty}:* ${m.quantity}`,
+        `📐 *${t.waArea}:* ${(m.totalSqft || 0).toFixed(2)} Sq.Ft.`
+      ];
+      if (m.notes) lines.push(`📝 *${t.waNotes}:* ${m.notes}`);
+      lines.push(`🕒 *${t.waDate}:* ${formatDateTime(m.updatedAt || m.createdAt)}`);
+      return lines.join('\n');
+    }
+
+    function buildBulkWhatsAppText(items, scopeTitle = '') {
+      const t = I18N[state.lang];
+      const totalPieces = items.reduce((s, m) => s + (m.quantity || 1), 0);
+      const totalSqft = items.reduce((s, m) => s + (m.totalSqft || 0), 0);
+
+      const lines = [t.waAllHeader];
+      if (scopeTitle) lines.push(`👤 *${t.waCustomer}:* ${scopeTitle}`);
+      lines.push(`🕒 ${formatDateTime(Date.now())}`);
+      lines.push(`━━━━━━━━━━━━━━━`);
+
+      items.forEach((m, idx) => {
+        lines.push(`${idx + 1}. *${m.customerName || t.generalCustomer}* (${m.roomLocation})`);
+        lines.push(`   • ${getWorkTypeLabel(m.workType)}`);
+        lines.push(`   • ${formatDimensionLine(m)} | ${t.waQty}: ${m.quantity} | ${(m.totalSqft || 0).toFixed(2)} Sq.Ft.`);
+        if (m.notes) lines.push(`   • ${t.waNotes}: ${m.notes}`);
+      });
+
+      lines.push(`━━━━━━━━━━━━━━━`);
+      lines.push(`✅ *${t.waTotalSummary}:* ${items.length} ${t.histEntries} | ${totalPieces} ${t.cardQty} | ${totalSqft.toFixed(2)} Sq.Ft.`);
+      return lines.join('\n');
+    }
+
+    function openShareModal(text) {
+      el.sharePreviewText.value = text;
+      el.linkOpenWa.href = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      el.modalShare.classList.remove('hidden');
+    }
+
+    function copyTextFallbackSafe(text) {
+      try {
+        const temp = document.createElement('textarea');
+        temp.value = text;
+        temp.setAttribute('readonly', '');
+        temp.style.position = 'fixed';
+        temp.style.left = '-9999px';
+        document.body.appendChild(temp);
+        temp.select();
+        temp.setSelectionRange(0, temp.value.length);
+        document.execCommand('copy');
+        document.body.removeChild(temp);
+        showToast(I18N[state.lang].toastCopied, 'success');
+      } catch (err) {
+        console.error('Copy error:', err);
+      }
+    }
+
+    /* =====================================================================
+       10. PDF EXPORT (HINDI DEVANAGARI VIA html2canvas + jsPDF) & PRINT
+       ===================================================================== */
+
+    function buildReportPageHtml(items, scopeLabel, pageNum, totalPages, showSummary) {
+      const t = I18N[state.lang];
+      const totalPieces = items.reduce((s, m) => s + (m.quantity || 1), 0);
+      const totalSqft = items.reduce((s, m) => s + (m.totalSqft || 0), 0);
+
+      const rowsHtml = items.map((m, i) => `
+        <tr style="border-bottom: 1px solid #e5dec9; background: ${i % 2 === 0 ? '#ffffff' : '#faf8f2'};">
+          <td style="padding: 8px 6px; font-size: 11px; font-weight: 700; text-align: center; color: #173e35;">${m._sno}</td>
+          <td style="padding: 8px 6px; font-size: 11px;">
+            <div style="font-weight: 700; color: #1a2421;">${escapeHtml(m.customerName || t.generalCustomer)}</div>
+            <div style="font-size: 10px; color: #5a6863; margin-top: 2px;">${escapeHtml(m.roomLocation)}</div>
+          </td>
+          <td style="padding: 8px 6px; font-size: 11px; font-weight: 600; color: #173e35;">${escapeHtml(getWorkTypeLabel(m.workType))}</td>
+          <td style="padding: 8px 6px; font-size: 11px; font-weight: 700; color: #1a2421;">${escapeHtml(formatDimensionLine(m))}</td>
+          <td style="padding: 8px 6px; font-size: 11px; font-weight: 700; text-align: center;">${m.quantity}</td>
+          <td style="padding: 8px 6px; font-size: 11px; font-weight: 700; text-align: right; color: #173e35;">${(m.totalSqft || 0).toFixed(2)}</td>
+          <td style="padding: 8px 6px; font-size: 10px; color: #475550;">
+            ${m.notes ? `<div>${escapeHtml(m.notes)}</div>` : ''}
+            <div style="font-size: 9px; color: #7b8883; margin-top: 2px;">${escapeHtml(formatDateTime(m.updatedAt || m.createdAt))}</div>
+          </td>
+        </tr>
+      `).join('');
+
+      return `
+        <div style="width: 794px; padding: 28px; background: #ffffff; color: #1a2421; box-sizing: border-box;">
+          <!-- Report Header -->
+          <div style="background: #173e35; color: #ffffff; padding: 18px 20px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 20px; font-weight: 800;">${escapeHtml(t.pdfReportTitle)}</div>
+              <div style="font-size: 11px; color: #cbe0d9; margin-top: 4px;">${escapeHtml(t.pdfCustomerScope)}: <strong style="color:#ffffff;">${escapeHtml(scopeLabel || t.pdfAllCustomers)}</strong></div>
+            </div>
+            <div style="text-align: right; font-size: 11px; color: #cbe0d9;">
+              <div>${escapeHtml(t.pdfGeneratedOn)}: ${escapeHtml(formatDateTime(Date.now()))}</div>
+              ${totalPages > 1 ? `<div style="margin-top:4px; font-weight:700; color:#ffffff;">Page ${pageNum} / ${totalPages}</div>` : ''}
+            </div>
+          </div>
+
+          ${showSummary ? `
+            <div style="display: flex; gap: 12px; margin-top: 14px;">
+              <div style="flex:1; background:#f6f2e9; border:1px solid #e5dec9; border-radius:10px; padding:10px; text-align:center;">
+                <div style="font-size:16px; font-weight:800; color:#173e35;">${showSummary.count}</div>
+                <div style="font-size:10px; font-weight:700; color:#5a6863;">${escapeHtml(t.statMeasurements)}</div>
+              </div>
+              <div style="flex:1; background:#f6f2e9; border:1px solid #e5dec9; border-radius:10px; padding:10px; text-align:center;">
+                <div style="font-size:16px; font-weight:800; color:#173e35;">${showSummary.pieces}</div>
+                <div style="font-size:10px; font-weight:700; color:#5a6863;">${escapeHtml(t.statPieces)}</div>
+              </div>
+              <div style="flex:1; background:#e5f0ec; border:1px solid #c3dcd3; border-radius:10px; padding:10px; text-align:center;">
+                <div style="font-size:16px; font-weight:800; color:#173e35;">${showSummary.sqft.toFixed(2)} Sq.Ft.</div>
+                <div style="font-size:10px; font-weight:700; color:#173e35;">${escapeHtml(t.histArea)}</div>
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Table -->
+          <table style="width: 100%; border-collapse: collapse; margin-top: 16px; border: 1px solid #e5dec9;">
+            <thead>
+              <tr style="background: #173e35; color: #ffffff;">
+                <th style="padding: 9px 6px; font-size: 11px; text-align: center; width: 32px;">${escapeHtml(t.pdfColSno)}</th>
+                <th style="padding: 9px 6px; font-size: 11px; text-align: left; width: 145px;">${escapeHtml(t.pdfColCustomerRoom)}</th>
+                <th style="padding: 9px 6px; font-size: 11px; text-align: left; width: 140px;">${escapeHtml(t.pdfColWork)}</th>
+                <th style="padding: 9px 6px; font-size: 11px; text-align: left; width: 135px;">${escapeHtml(t.pdfColSize)}</th>
+                <th style="padding: 9px 6px; font-size: 11px; text-align: center; width: 42px;">${escapeHtml(t.pdfColQty)}</th>
+                <th style="padding: 9px 6px; font-size: 11px; text-align: right; width: 65px;">${escapeHtml(t.pdfColSqft)}</th>
+                <th style="padding: 9px 6px; font-size: 11px; text-align: left;">${escapeHtml(t.pdfColNotes)}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+
+          <div style="margin-top: 14px; font-size: 10px; color: #7b8883; text-align: right;">
+            Mistri Napi • ${escapeHtml(t.appTitle)}
+          </div>
+        </div>
+      `;
+    }
+
+    async function exportToPdf(items, scopeLabel = '') {
+      const t = I18N[state.lang];
+      if (!items || items.length === 0) {
+        showToast(t.toastNoRecords, 'error');
+        return;
+      }
+
+      if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+        showToast(t.toastPdfFail, 'error');
+        return;
+      }
+
+      showToast(t.toastPdfWorking, 'info');
+
+      try {
+        if (document.fonts && document.fonts.ready) {
+          await document.fonts.ready;
+        }
+
+        const numbered = items.map((m, idx) => ({ ...m, _sno: idx + 1 }));
+        const summary = {
+          count: items.length,
+          pieces: items.reduce((s, m) => s + (m.quantity || 1), 0),
+          sqft: items.reduce((s, m) => s + (m.totalSqft || 0), 0)
+        };
+
+        // Chunk rows cleanly per page so rows are never cut mid-line
+        const ROWS_PER_PAGE = 12;
+        const chunks = [];
+        for (let i = 0; i < numbered.length; i += ROWS_PER_PAGE) {
+          chunks.push(numbered.slice(i, i + ROWS_PER_PAGE));
+        }
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageWidthMm = pdf.internal.pageSize.getWidth();
+
+        for (let p = 0; p < chunks.length; p++) {
+          if (p > 0) pdf.addPage();
+          el.pdfStage.innerHTML = buildReportPageHtml(
+            chunks[p],
+            scopeLabel,
+            p + 1,
+            chunks.length,
+            p === 0 ? summary : null
+          );
+
+          const canvas = await html2canvas(el.pdfStage.firstElementChild, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            logging: false
+          });
+
+          const imgData = canvas.toDataURL('image/jpeg', 0.94);
+          const imgHeightMm = (canvas.height * pageWidthMm) / canvas.width;
+          pdf.addImage(imgData, 'JPEG', 0, 0, pageWidthMm, Math.min(imgHeightMm, 297));
+        }
+
+        el.pdfStage.innerHTML = '';
+
+        const stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
+        const safeScope = scopeLabel ? '_' + scopeLabel.replace(/[^a-zA-Z0-9\u0900-\u097F]+/g, '_').slice(0, 24) : '';
+        pdf.save(`MistriNapi${safeScope}_${stamp}.pdf`);
+        showToast(t.toastPdfDone, 'success');
+      } catch (err) {
+        console.error('PDF generation failed:', err);
+        el.pdfStage.innerHTML = '';
+        showToast(t.toastPdfFail, 'error');
+      }
+    }
+
+    function printMeasurements(items, scopeLabel = '') {
+      const t = I18N[state.lang];
+      if (!items || items.length === 0) {
+        showToast(t.toastNoRecords, 'error');
+        return;
+      }
+
+      const numbered = items.map((m, idx) => ({ ...m, _sno: idx + 1 }));
+      const summary = {
+        count: items.length,
+        pieces: items.reduce((s, m) => s + (m.quantity || 1), 0),
+        sqft: items.reduce((s, m) => s + (m.totalSqft || 0), 0)
+      };
+
+      // Use responsive width for print sheet
+      el.printSheet.innerHTML = buildReportPageHtml(numbered, scopeLabel, 1, 1, summary)
+        .replace('width: 794px;', 'width: 100%;');
+
+      window.print();
+    }
+
+    /* =====================================================================
+       11. JSON BACKUP & RESTORE (MERGE OR REPLACE)
+       ===================================================================== */
+
+    function handleBackupExport() {
+      const t = I18N[state.lang];
+      if (state.measurements.length === 0) {
+        showToast(t.toastNoRecords, 'error');
+        return;
+      }
+
+      const payload = {
+        app: 'Mistri Napi',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        totalRecords: state.measurements.length,
+        measurements: state.measurements
+      };
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
+      a.href = url;
+      a.download = `MistriNapi_Backup_${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(t.toastBackupDone, 'success');
+    }
+
+    function handleRestoreFileSelected(e) {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = ''; // Allow selecting same file again later
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(String(reader.result || '{}'));
+          const rawList = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.measurements) ? parsed.measurements : null);
+          if (!rawList || rawList.length === 0) {
+            showToast(I18N[state.lang].toastInvalidBackup, 'error');
+            return;
+          }
+
+          const cleaned = rawList
+            .filter((r) => r && typeof r === 'object')
+            .map((r) => normalizeRecord(r));
+
+          if (cleaned.length === 0) {
+            showToast(I18N[state.lang].toastInvalidBackup, 'error');
+            return;
+          }
+
+          state.pendingRestoreRecords = cleaned;
+          document.getElementById('modal-restore-desc').textContent = I18N[state.lang].restoreDesc(cleaned.length);
+          el.modalRestore.classList.remove('hidden');
+        } catch (err) {
+          console.error('Restore parse error:', err);
+          showToast(I18N[state.lang].toastInvalidBackup, 'error');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    async function executeRestore(mode) {
+      const records = state.pendingRestoreRecords;
+      state.pendingRestoreRecords = null;
+      el.modalRestore.classList.add('hidden');
+      if (!records || records.length === 0) return;
+
+      const t = I18N[state.lang];
+
+      if (mode === 'replace') {
+        // Delete existing cloud documents first if connected
+        if (db && currentUser) {
+          try {
+            const colRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'measurements');
+            const snap = await getDocs(colRef);
+            const deletes = [];
+            snap.forEach((d) => deletes.push(deleteDoc(d.ref)));
+            await Promise.all(deletes);
+          } catch (err) {
+            console.error('Replace clear error:', err);
+          }
+        }
+        state.measurements = [...records];
+      } else {
+        // Merge: avoid ID collisions by assigning fresh ID if an ID already exists with different content
+        const existingIds = new Set(state.measurements.map((m) => m.id));
+        const toAdd = records.map((r) => {
+          const copy = { ...r };
+          if (existingIds.has(copy.id)) copy.id = generateId();
+          return copy;
+        });
+        state.measurements = [...toAdd, ...state.measurements];
+        // Write only newly merged items to cloud
+        if (db && currentUser) {
+          try {
+            await Promise.all(toAdd.map((rec) =>
+              setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'measurements', rec.id), rec)
+            ));
+          } catch (err) {
+            console.error('Merge cloud write error:', err);
+          }
+        }
+        state.measurements.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+        renderAll();
+        showToast(t.toastRestoreMerged(records.length), 'success');
+        switchTab('list');
+        return;
+      }
+
+      // Write all replaced records to cloud
+      if (db && currentUser) {
+        try {
+          await Promise.all(state.measurements.map((rec) =>
+            setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'measurements', rec.id), rec)
+          ));
+        } catch (err) {
+          console.error('Replace cloud write error:', err);
+        }
+      }
+
+      state.measurements.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+      renderAll();
+      showToast(t.toastRestoreReplaced(records.length), 'success');
+      switchTab('list');
+    }
+
+    /* =====================================================================
+       12. EVENT LISTENERS & INITIALIZATION
+       ===================================================================== */
+
+    function bindEvents() {
+      // Language toggle
+      document.getElementById('btn-lang-toggle').addEventListener('click', () => {
+        state.lang = state.lang === 'hi' ? 'en' : 'hi';
+        applyLanguage();
+        persistLanguagePref(state.lang);
+      });
+
+      // Header Backup & Restore
+      document.getElementById('btn-backup').addEventListener('click', handleBackupExport);
+      document.getElementById('btn-restore').addEventListener('click', () => el.inputRestoreFile.click());
+      el.inputRestoreFile.addEventListener('change', handleRestoreFileSelected);
+
+      // Tabs
+      document.querySelectorAll('.tab-btn').forEach((btn) => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+      });
+
+      // Form reactive listeners
+      el.workType.addEventListener('change', updateDynamicFormRules);
+      el.unit.addEventListener('change', () => {
+        updateDynamicFormRules();
+        updateLiveAreaPreview();
+      });
+
+      [el.width, el.height, el.qty].forEach((input) => {
+        input.addEventListener('input', updateLiveAreaPreview);
+      });
+
+      [el.widthSuta, el.heightSuta, el.depthSuta].forEach((input) => {
+        input.addEventListener('input', () => {
+          clampSutaInput(input);
+          updateLiveAreaPreview();
+        });
+      });
+
+      el.form.addEventListener('submit', handleFormSubmit);
+      document.getElementById('btn-clear-form').addEventListener('click', () => resetForm(false));
+      document.getElementById('btn-banner-cancel-edit').addEventListener('click', () => resetForm(false));
+
+      // Real-time search
+      el.search.addEventListener('input', () => {
+        state.searchQuery = el.search.value;
+        el.btnClearSearch.classList.toggle('hidden', !state.searchQuery);
+        renderMeasurementsList();
+      });
+      el.btnClearSearch.addEventListener('click', () => {
+        el.search.value = '';
+        state.searchQuery = '';
+        el.btnClearSearch.classList.add('hidden');
+        renderMeasurementsList();
+      });
+
+      // Clear active customer filter
+      document.getElementById('btn-clear-customer-filter').addEventListener('click', () => {
+        state.customerFilter = '';
+        renderMeasurementsList();
+      });
+
+      // Bulk List Actions (WhatsApp All/Filtered, PDF, Print)
+      document.getElementById('btn-share-all-wa').addEventListener('click', () => {
+        const items = getFilteredMeasurements();
+        if (items.length === 0) {
+          showToast(I18N[state.lang].toastNoRecords, 'error');
+          return;
+        }
+        openShareModal(buildBulkWhatsAppText(items, state.customerFilter));
+      });
+
+      document.getElementById('btn-export-pdf').addEventListener('click', () => {
+        exportToPdf(getFilteredMeasurements(), state.customerFilter);
+      });
+
+      document.getElementById('btn-print-list').addEventListener('click', () => {
+        printMeasurements(getFilteredMeasurements(), state.customerFilter);
+      });
+
+      // Delegated Measurement Card Actions (Share, Edit, Delete)
+      el.listContainer.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+        const id = btn.dataset.id;
+        const record = state.measurements.find((m) => m.id === id);
+        if (!record) return;
+
+        if (btn.dataset.action === 'edit') {
+          loadRecordIntoForm(record);
+        } else if (btn.dataset.action === 'share-one') {
+          openShareModal(buildSingleWhatsAppText(record));
+        } else if (btn.dataset.action === 'delete') {
+          state.pendingDeleteId = record.id;
+          const t = I18N[state.lang];
+          document.getElementById('modal-delete-desc').textContent = t.deleteDesc(
+            record.customerName || t.generalCustomer,
+            getWorkTypeLabel(record.workType),
+            record.roomLocation
+          );
+          el.modalDelete.classList.remove('hidden');
+        }
+      });
+
+      // Delegated Customer History Actions (View List, WhatsApp, Customer PDF)
+      el.historyContainer.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-hist-action]');
+        if (!btn) return;
+        const customerName = btn.dataset.customer;
+        const t = I18N[state.lang];
+        const custItems = state.measurements.filter((m) =>
+          (m.customerName || t.generalCustomer).trim().toLowerCase() === customerName.trim().toLowerCase()
+        );
+
+        if (btn.dataset.histAction === 'view') {
+          state.customerFilter = customerName;
+          switchTab('list');
+          renderMeasurementsList();
+        } else if (btn.dataset.histAction === 'whatsapp') {
+          if (custItems.length > 0) openShareModal(buildBulkWhatsAppText(custItems, customerName));
+        } else if (btn.dataset.histAction === 'pdf') {
+          exportToPdf(custItems, customerName);
+        }
+      });
+
+      // Delete Modal controls
+      document.getElementById('btn-cancel-delete').addEventListener('click', () => {
+        state.pendingDeleteId = null;
+        el.modalDelete.classList.add('hidden');
+      });
+      document.getElementById('btn-confirm-delete').addEventListener('click', async () => {
+        const id = state.pendingDeleteId;
+        state.pendingDeleteId = null;
+        el.modalDelete.classList.add('hidden');
+        if (id) {
+          if (state.editingId === id) resetForm(false);
+          await removeMeasurement(id);
+          showToast(I18N[state.lang].toastDeleted, 'info');
+        }
+      });
+
+      // Restore Modal controls
+      document.getElementById('btn-restore-merge').addEventListener('click', () => executeRestore('merge'));
+      document.getElementById('btn-restore-replace').addEventListener('click', () => executeRestore('replace'));
+      document.getElementById('btn-restore-cancel').addEventListener('click', () => {
+        state.pendingRestoreRecords = null;
+        el.modalRestore.classList.add('hidden');
+      });
+
+      // Share Modal controls
+      document.getElementById('btn-close-share').addEventListener('click', () => el.modalShare.classList.add('hidden'));
+      document.getElementById('btn-copy-share-text').addEventListener('click', () => {
+        copyTextFallbackSafe(el.sharePreviewText.value);
+      });
+
+      // Close modals when tapping backdrop
+      [el.modalDelete, el.modalRestore, el.modalShare].forEach((modal) => {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) modal.classList.add('hidden');
+        });
+      });
+    }
+
+    // Boot Application
+    window.addEventListener('DOMContentLoaded', () => {
+      bindEvents();
+      applyLanguage();
+      initCloudStorage();
+    });
+  </script>
+</body>
+</html>
